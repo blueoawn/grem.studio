@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team GREM - Welcome to Our Digital Haven</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="ant-background.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body style="margin:0; padding:0; overflow-x:hidden; background:rgba(6,7,10,0.95);">
+    <nav id="navbar" style="position:center; top:0; left:0; right:0; background:rgba(10,10,14,0.98); z-index:1000; padding:15px 0; box-shadow:0 2px 20px rgba(0,0,0,0.5); width:100%;">
+        <ul style="max-width:1200px; margin:0 auto; padding:0 40px; list-style:none; display:flex; gap:30px; align-items:center; flex-wrap:wrap;    justify-content: center;">
+            <li style="margin:0;"><a href="index.html" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Home</a></li>
+            <li style="margin:0;"><a href="minecraft.html" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Games</a></li>
+            <li style="margin:0;"><a href="#authors" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Founders</a></li>
+        </ul>
+    </nav>
+    <canvas id="c" aria-hidden="true" style="position:fixed; inset:0; z-index:-1; pointer-events:none;"></canvas>
+    <div id="container" style="position:relative; z-index:2; max-width:1200px; margin:32px auto; background:rgba(10,10,14,0.85); padding:40px; box-shadow:0 0 60px rgba(0,0,0,0.5); border-radius:16px;">
+
+        
+        <header id="main-header" style="margin: -40px -40px 0 -40px; padding: 40px;">
+            <div class="header-content">
+            <h1 class="style-nine" data-text="GREM Studio">GREM.Studio</h1>
+            <p class="tagline">Your Favorite Digital Haven</p>
+            </div>
+        </header>
+
+        <main>
+            <div class="welcome-box">
+                    <div class="stats-counter">
+                        <h2 class="grungy-text">Introducing Team Grem Studio</h2>               
+                    </div>
+
+                <p style="padding-top:15px;">You've stumbled upon the weird corner of the internet. Here at GREM, we're a bunch of degenerate gamers staying up at crackhead hours to bring you the latest updates, creative content, and a some random cool fuck ass shit.</p>
+                
+                <section class="info-section">
+                    <h3>Quick Access</h3>
+                    <ul>
+                        <li>Connect to our Minecraft server: <a href="minecraft.html"> minecraft.grem.studio</a></li>
+                        <li>Try our first game: <a href="https://hdh.grem.studio">Half Dozen Heroz</a></li>
+                    </ul>
+                </section>
+
+                <section class="info-section">
+                    <h3>What's New?</h3>
+                    <ul>
+                        <li><strong>December 10, 2025:</strong> Site launched! Check out our author profiles!</li>
+                        <li><strong>Coming Soon:</strong> Multiplayer browser arena deathmatch game</li>
+                        <li><strong>Featured:</strong>Our game jam project <a href="gamejam.html">Half Dozen Heroz</a></li>
+                    </ul>
+                </section>
+
+
+            </div>
+
+            <div class="content-grid">
+                <div class="content-box">
+                    <h3>Featured Authors</h3>
+                    <p>Meet the talented individuals behind Team GREM. Click on their profiles to learn more about their work and connect with them!</p>
+                    <ul>
+                        <li><a href="armando.html">→ Armando "Nero" Arroyo</a></li>
+                        <li><a href="william.html">→ William "Koji-san" Kim</a></li>
+                        <li><a href="daniel.html">→ Daniel "Bluepawn" Stein</a></li>
+                    </ul>
+                </div>
+
+                <div class="content-box">
+                                  <div class="social-media-section">
+                        <h3>Follow Us</h3>
+                        <div class="social-badges-container">
+                            <ul class="social-badges">
+                                <a href="https://www.youtube.com/@grem.studio" class="social-badge youtube" title="YouTube Channel"><i class="fab fa-youtube"></i></a>
+                                <a href="https://discord.gg/your-invite-link" class="social-badge discord" title="Discord Server"><i class="fab fa-discord"></i></a>
+                                <!-- Placeholder for future badges -->
+                                <div class="social-badge placeholder" title="Coming Soon"><i class="fas fa-plus"></i></div>
+                                <div class="social-badge placeholder" title="Coming Soon"><i class="fas fa-plus"></i></div>
+                            </ul>
+                        </div>
+                    </div>
+
+                    </div>
+                </div>
+                            <div class="announcement-marquee">
+                <marquee behavior="loop" direction="left" scrollamount="3">
+                    ★ Welcome to GREM Studio! ★ Don't forget to take ur shoes off! ★ Best viewed on a monitor ★ Add us to your bookmarks! ★ Enjoy your stay! ★ Thanks for stopping by! ★ No cringe allowed here ★ We're glad you exist ★ Stay hydrated, friend! ★
+                </marquee>
+            </div>
+            </div>
+
+
+
+        </main>
+  
+        <footer>
+            <p>&copy; 2025 Team GREM. All rights reserved. | <a href="mailto:bluepawn@teamgrem.com">Contact Us</a></p>
+            <p class="footer-note">Best viewed on desktop web browser, if u read this you are awesome</p>
+        </footer>
+    </div>
+
+    <canvas id="ant-canvas" aria-hidden="true" style="z-index:1;"></canvas>
+    <script src="script.js"></script>
+    <script src="waves.js"></script>
+    <script src="langstonbg.js"></script>
+</body>
+</html>
