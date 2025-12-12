@@ -108,6 +108,26 @@
       this.targetX = this.x;
       this.targetY = this.y;
       this.wanderTimer = 0;
+      
+      // Assign ant to a region (3x3 grid subdivision)
+      const regionX = Math.floor((this.x / gridWidth) * 3);
+      const regionY = Math.floor((this.y / gridHeight) * 3);
+      this.regionX = Math.max(0, Math.min(2, regionX));
+      this.regionY = Math.max(0, Math.min(2, regionY));
+    }
+    
+    getRegionBounds() {
+      const gridWidth = Math.floor(width / CELL_SIZE);
+      const gridHeight = Math.floor(height / CELL_SIZE);
+      const regionWidth = Math.ceil(gridWidth / 3);
+      const regionHeight = Math.ceil(gridHeight / 3);
+      
+      const minX = this.regionX * regionWidth;
+      const maxX = Math.min(gridWidth - 1, (this.regionX + 1) * regionWidth - 1);
+      const minY = this.regionY * regionHeight;
+      const maxY = Math.min(gridHeight - 1, (this.regionY + 1) * regionHeight - 1);
+      
+      return { minX, maxX, minY, maxY };
     }
 
     step() {
@@ -133,12 +153,38 @@
         case 3: this.x--; break; // West
       }
 
-      // Wander around the screen
+      // Wander around the screen - constrained to region
       this.wanderTimer--;
       if (this.wanderTimer <= 0) {
-        // Pick a new random target every few seconds
-        this.targetX = Math.floor(Math.random() * (width / CELL_SIZE));
-        this.targetY = Math.floor(Math.random() * (height / CELL_SIZE));
+        const bounds = this.getRegionBounds();
+        const regionWidth = bounds.maxX - bounds.minX + 1;
+        const regionHeight = bounds.maxY - bounds.minY + 1;
+        
+        if (Math.random() < 0.4) {
+          // 40% chance to pick an edge of the region
+          const edge = Math.floor(Math.random() * 4);
+          if (edge === 0) {
+            // Top edge of region
+            this.targetX = bounds.minX + Math.floor(Math.random() * regionWidth);
+            this.targetY = bounds.minY;
+          } else if (edge === 1) {
+            // Right edge of region
+            this.targetX = bounds.maxX;
+            this.targetY = bounds.minY + Math.floor(Math.random() * regionHeight);
+          } else if (edge === 2) {
+            // Bottom edge of region
+            this.targetX = bounds.minX + Math.floor(Math.random() * regionWidth);
+            this.targetY = bounds.maxY;
+          } else {
+            // Left edge of region
+            this.targetX = bounds.minX;
+            this.targetY = bounds.minY + Math.floor(Math.random() * regionHeight);
+          }
+        } else {
+          // 60% chance for random position within region
+          this.targetX = bounds.minX + Math.floor(Math.random() * regionWidth);
+          this.targetY = bounds.minY + Math.floor(Math.random() * regionHeight);
+        }
         this.wanderTimer = 180 + Math.floor(Math.random() * 120); // 3-5 seconds
       }
 
