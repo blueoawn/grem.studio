@@ -4,12 +4,12 @@
 
 /* Configuration Variables */
 :root {
-  --cell-size: 14;
-  --ant-count: 14;
-  --hue-speed: 11deg;
-  --cell-blur: 7px;
-  --glow-strength: 0.65;
-  --cell-alpha: 2.85;
+  --cell-size: 12;
+  --ant-count: 12;
+  --hue-speed: 120deg;
+  --cell-blur: 2px;
+  --glow-strength: 2;
+  --cell-alpha: 5;
 }
 
 /* Canvas Styling */

@@ -184,7 +184,7 @@
   function fadeGrid() {
     const toDelete = [];
     grid.forEach((v, k) => {
-      if (Math.random() < 0.003) { // 0.3% chance to fade each frame (slower fade)
+      if (Math.random() < 0.0041) { // 0.3% chance to fade each frame (slower fade)
         toDelete.push(k);
       }
     });
