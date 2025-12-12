@@ -9,7 +9,7 @@
   --hue-speed: 11deg;
   --cell-blur: 7px;
   --glow-strength: 0.65;
-  --cell-alpha: 1;
+  --cell-alpha: 2.85;
 }
 
 /* Canvas Styling */
