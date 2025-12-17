@@ -1035,3 +1035,31 @@ h1.style-nine::before {
     text-shadow: none;
     opacity: 0.7;
 }
+
+/* === LIVE TEXT STYLING === */
+.live-text {
+    display: inline-block;
+    color: #00ff00;
+    font-weight: bold;
+    font-size: 1.1em;
+    animation: wave 0.6s ease-in-out infinite, glow 2s ease-in-out infinite;
+    text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+}
+
+@keyframes wave {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-3px);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00, 0 0 30px #00ff00;
+    }
+    50% {
+        text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00, 0 0 50px #00ff00;
+    }
+}
