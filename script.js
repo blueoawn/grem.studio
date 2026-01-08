@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     return true;
-}
+});
 
 // Add some retro console art
 console.log('%c' + `

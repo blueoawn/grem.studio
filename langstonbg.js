@@ -10,11 +10,22 @@
   const containerEl = document.getElementById('container');
   if (!containerEl) return;
 
-  // Get CSS variables or use defaults
+  // Get adaptive settings from performance detection (fallback to defaults)
+  const perfSettings = window.PerfSettings?.settings || { antCount: 30, antStepsPerFrame: 3, targetFps: 30 };
+  const frameLimiter = window.PerfSettings?.createFrameLimiter(perfSettings.targetFps) || (() => true);
+
+  // Get CSS variables or use defaults (adaptive count overrides CSS)
   const CELL_SIZE = parseFloat(css.getPropertyValue('--cell-size')) || 8;
-  const ANT_COUNT = parseInt(css.getPropertyValue('--ant-count')) || 30;
+  const ANT_COUNT = perfSettings.antCount;
+  const STEPS_PER_FRAME = perfSettings.antStepsPerFrame;
   const HUE_SPEED_STR = css.getPropertyValue('--hue-speed') || '15deg';
   const HUE_SPEED = parseFloat(HUE_SPEED_STR);
+
+  // Gradient cache for performance (avoid creating gradients every frame)
+  const GRADIENT_CACHE_SIZE = 36; // Cache gradients at 10-degree hue intervals
+  let gradientCache = [];
+  let lastCacheWidth = 0;
+  let lastCacheHeight = 0;
 
   // Spawn configuration (along main rectangle edges)
   const SPAWN_CONFIG = {
@@ -131,7 +142,8 @@
     }
 
     step() {
-      const key = `${this.x},${this.y}`;
+      // Use numeric key for better performance (avoid string parsing)
+      const key = this.x * 10000 + this.y;
       const cellState = grid.get(key) || 0;
       
       // Langston's Ant rules:
@@ -237,57 +249,93 @@
     toDelete.forEach(k => grid.delete(k));
   }
 
+  // Build gradient cache (call on resize or first use)
+  function buildGradientCache() {
+    if (width === lastCacheWidth && height === lastCacheHeight && gradientCache.length > 0) {
+      return; // Cache is still valid
+    }
+    gradientCache = [];
+    const alpha = parseFloat(css.getPropertyValue('--cell-alpha')) || 0.85;
+
+    for (let i = 0; i < GRADIENT_CACHE_SIZE; i++) {
+      const hue = (i / GRADIENT_CACHE_SIZE) * 360;
+      // Create an offscreen pattern we can reuse
+      gradientCache.push({
+        hue: hue,
+        color: `hsla(${hue}, 85%, 65%, ${alpha})`,
+        fadeColor: `hsla(${hue}, 85%, 50%, 0)`
+      });
+    }
+    lastCacheWidth = width;
+    lastCacheHeight = height;
+  }
+
+  // Get cached gradient colors for a given hue
+  function getCachedColors(hue) {
+    const index = Math.floor((hue / 360) * GRADIENT_CACHE_SIZE) % GRADIENT_CACHE_SIZE;
+    return gradientCache[index];
+  }
+
   // Animation loop
-  function animate() {
+  function animate(now) {
+    // Frame rate limiting for 30fps
+    if (!frameLimiter(now)) {
+      requestAnimationFrame(animate);
+      return;
+    }
+
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
 
     // Update hue
-    currentHue = (currentHue + HUE_SPEED / 60) % 360;
+    currentHue = (currentHue + HUE_SPEED / 30) % 360; // Adjusted for 30fps
 
-    // Move ants
-    for (let i = 0; i < 3; i++) { // 3 steps per frame for faster movement
+    // Move ants (adaptive steps per frame)
+    for (let i = 0; i < STEPS_PER_FRAME; i++) {
       ants.forEach(ant => ant.step());
     }
 
     // Fade old cells
     fadeGrid();
 
+    // Build gradient cache if needed
+    buildGradientCache();
+
+    // Get cached colors for current hue
+    const cachedColors = getCachedColors(currentHue);
+    const r = CELL_SIZE * 0.75;
+
     // Render grid - no camera offset, just render directly
     grid.forEach((v, k) => {
-      const [gx, gy] = k.split(',').map(Number);
+      // Decode numeric key (x * 10000 + y)
+      const gx = Math.floor(k / 10000);
+      const gy = k % 10000;
       const sx = gx * CELL_SIZE;
       const sy = gy * CELL_SIZE;
-      
+
       // Skip if off-screen
-      if (sx < -CELL_SIZE || sx > width + CELL_SIZE || 
+      if (sx < -CELL_SIZE || sx > width + CELL_SIZE ||
           sy < -CELL_SIZE || sy > height + CELL_SIZE) return;
 
-      const r = CELL_SIZE * 0.75;
+      // Create gradient using cached colors (still need position-specific gradient)
       const grad = ctx.createRadialGradient(
         sx + CELL_SIZE / 2, sy + CELL_SIZE / 2, 0,
         sx + CELL_SIZE / 2, sy + CELL_SIZE / 2, r
       );
-
-      const alpha = parseFloat(css.getPropertyValue('--cell-alpha')) || 0.85;
-      const glow = parseFloat(css.getPropertyValue('--glow-strength')) || 0.35;
-
-      grad.addColorStop(0, `hsla(${currentHue}, 85%, 65%, ${alpha})`);
-      grad.addColorStop(1, `hsla(${currentHue}, 85%, 50%, 0)`);
+      grad.addColorStop(0, cachedColors.color);
+      grad.addColorStop(1, cachedColors.fadeColor);
 
       ctx.fillStyle = grad;
       ctx.fillRect(sx - r / 2, sy - r / 2, CELL_SIZE + r, CELL_SIZE + r);
 
-      ctx.shadowBlur = CELL_SIZE * 2 * glow;
-      ctx.shadowColor = `hsla(${currentHue}, 90%, 70%, 0.6)`;
+      // Shadow blur removed for performance
     });
-    ctx.shadowBlur = 0;
 
     requestAnimationFrame(animate);
   }
 
   // Start animation
-  animate();
+  requestAnimationFrame(animate);
 
   // Re-initialize on layout changes to keep edge alignment
   const ro = new ResizeObserver(() => {

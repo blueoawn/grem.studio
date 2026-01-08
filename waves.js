@@ -3,6 +3,14 @@ const canvas = document.getElementById('c');
 if (!canvas) throw new Error('Canvas #c not found');
 const ctx = canvas.getContext('2d');
 
+// Get adaptive settings from performance detection (fallback to defaults)
+const perfSettings = window.PerfSettings?.settings || { waveSamples: 600, particleCount: 300, targetFps: 30 };
+const frameLimiter = window.PerfSettings?.createFrameLimiter(perfSettings.targetFps) || (() => true);
+
+// Adaptive sample and particle counts
+const SAMPLES = perfSettings.waveSamples;
+const PARTICLE_COUNT = perfSettings.particleCount;
+
 // Optional controls, only for the demo page
 const noiseSlider = document.getElementById('noise');
 const harmSlider = document.getElementById('harmonics');
@@ -29,18 +37,49 @@ function resize() {
   canvas.style.width = `${innerWidth}px`;
   canvas.style.height = `${innerHeight}px`;
 }
-addEventListener('resize', resize);
+// Gradient cache (rebuilt on resize)
+let cachedGradients = null;
+function buildGradients() {
+  cachedGradients = {
+    waveA: ctx.createLinearGradient(0, 0, W, 0),
+    waveB: ctx.createLinearGradient(0, 0, 0, H),
+    waveC: ctx.createLinearGradient(0, 0, W, H),
+    waveD: ctx.createLinearGradient(0, 0, W, 0)
+  };
+  // Wave A gradient
+  cachedGradients.waveA.addColorStop(0, 'rgba(167, 14, 238, 0.3)');
+  cachedGradients.waveA.addColorStop(0.5, 'rgba(23, 143, 255, 0.7)');
+  cachedGradients.waveA.addColorStop(1, 'rgba(51, 34, 77, 0.4)');
+  // Wave B gradient
+  cachedGradients.waveB.addColorStop(0, 'rgba(255, 176, 58, 0.25)');
+  cachedGradients.waveB.addColorStop(0.5, 'rgba(255, 99, 102, 0.55)');
+  cachedGradients.waveB.addColorStop(1, 'rgba(176, 61, 255, 0.35)');
+  // Wave C gradient
+  cachedGradients.waveC.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
+  cachedGradients.waveC.addColorStop(0.5, 'rgba(45, 212, 191, 0.6)');
+  cachedGradients.waveC.addColorStop(1, 'rgba(20, 184, 166, 0.3)');
+  // Wave D gradient
+  cachedGradients.waveD.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+  cachedGradients.waveD.addColorStop(0.5, 'rgba(168, 85, 247, 0.55)');
+  cachedGradients.waveD.addColorStop(1, 'rgba(59, 130, 246, 0.35)');
+}
+
+addEventListener('resize', () => {
+  resize();
+  buildGradients(); // Rebuild gradients on resize
+});
 resize();
+buildGradients(); // Initial gradient build
 
 let phases = [];
 let targetAmps = [];
 let currentAmps = [];
 let baseAmps = [];
 
-const particleCount = 420;
-const px = new Float32Array(particleCount);
-const py = new Float32Array(particleCount);
-for (let i = 0; i < particleCount; i++) px[i] = i / (particleCount - 1);
+// Use adaptive particle count
+const px = new Float32Array(PARTICLE_COUNT);
+const py = new Float32Array(PARTICLE_COUNT);
+for (let i = 0; i < PARTICLE_COUNT; i++) px[i] = i / (PARTICLE_COUNT - 1);
 
 function lerp(a, b, t) { return a + (b - a) * t; }
 
@@ -64,6 +103,12 @@ let t = 0;
 let last = performance.now();
 
 function draw(now) {
+  // Frame rate limiting for 30fps
+  if (!frameLimiter(now)) {
+    requestAnimationFrame(draw);
+    return;
+  }
+
   const dt = Math.min(40, now - last) / 1000;
   last = now;
   t += dt * transSpeed;
@@ -71,7 +116,6 @@ function draw(now) {
   ctx.fillStyle = 'rgba(6,7,10,0.18)';
   ctx.fillRect(0, 0, W, H);
 
-  const cx = W / 2;
   const cy = H / 2;
   const amplitude = Math.min(H, 420 * DPR);
 
@@ -81,7 +125,8 @@ function draw(now) {
     currentAmps[k] = lerp(currentAmps[k], desired, Math.min(1, dt * 1.5));
   }
 
-  const samples = 800;
+  // Use adaptive sample count
+  const samples = SAMPLES;
 
   // Wave A (original style)
   ctx.lineWidth = 1.5 * DPR;
@@ -99,11 +144,7 @@ function draw(now) {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  let g = ctx.createLinearGradient(0, 0, W, 0);
-  g.addColorStop(0, 'rgba(167, 14, 238, 0.3)');
-  g.addColorStop(0.5, 'rgba(23, 143, 255, 0.7)');
-  g.addColorStop(1, 'rgba(51, 34, 77, 0.4)');
-  ctx.strokeStyle = g;
+  ctx.strokeStyle = cachedGradients.waveA;
   ctx.stroke();
 
   // Wave B (saw-like blend, warm gradient)
@@ -125,11 +166,7 @@ function draw(now) {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, 'rgba(255, 176, 58, 0.25)');
-  g.addColorStop(0.5, 'rgba(255, 99, 102, 0.55)');
-  g.addColorStop(1, 'rgba(176, 61, 255, 0.35)');
-  ctx.strokeStyle = g;
+  ctx.strokeStyle = cachedGradients.waveB;
   ctx.stroke();
 
   // Wave C (noise-modulated, emerald/teal)
@@ -150,11 +187,7 @@ function draw(now) {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  g = ctx.createLinearGradient(0, 0, W, H);
-  g.addColorStop(0, 'rgba(16, 185, 129, 0.2)');
-  g.addColorStop(0.5, 'rgba(45, 212, 191, 0.6)');
-  g.addColorStop(1, 'rgba(20, 184, 166, 0.3)');
-  ctx.strokeStyle = g;
+  ctx.strokeStyle = cachedGradients.waveC;
   ctx.stroke();
   ctx.setLineDash([]);
 
@@ -173,21 +206,17 @@ function draw(now) {
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
-  g = ctx.createLinearGradient(0, 0, W, 0);
-  g.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
-  g.addColorStop(0.5, 'rgba(168, 85, 247, 0.55)');
-  g.addColorStop(1, 'rgba(59, 130, 246, 0.35)');
-  ctx.strokeStyle = g;
+  ctx.strokeStyle = cachedGradients.waveD;
   ctx.stroke();
 
-  for (let i = 0; i < particleCount; i++) {
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
     const norm = px[i];
     let yOff = 0;
     for (let k = 0; k < harmonics; k++) {
       const freq = (k + 1);
       yOff += currentAmps[k] * Math.sin((norm * freq * Math.PI * 2) + phases[k] + t * 0.6 * (0.2 + k * 0.008));
     }
-    const jitter = Math.sin(t * 1.2 + i * 0.07) * 0.6 * (1 - (i / particleCount));
+    const jitter = Math.sin(t * 1.2 + i * 0.07) * 0.6 * (1 - (i / PARTICLE_COUNT));
     const xx = norm * W;
     const yy = cy + (yOff * amplitude * 0.62) + jitter * 8 * DPR;
     const localAmp = Math.abs(yOff);
