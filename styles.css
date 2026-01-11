@@ -306,6 +306,15 @@ main {
     width: 100%;
     box-sizing: border-box;
     overflow: hidden;
+    /* Performance optimizations for smooth scrolling */
+    contain: content;
+    will-change: contents;
+}
+
+.announcement-marquee marquee {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    text-rendering: optimizeSpeed;
 }
 
 /* === AUTHOR LAYOUT === */
@@ -941,10 +950,19 @@ footer a {
   box-shadow: 0 8px 20px rgba(88, 101, 242, 0.4);
 }
 
-.fa-instagram {
-  background: #3B5998;
+/* Instagram badge */
+.social-badge.instagram {
+  background: linear-gradient(135deg, #833ab4 0%, #e1306c 50%, #fd1d1d 100%);
   color: white;
+  border-color: rgba(255, 255, 255, 0.3);
 }
+
+.social-badge.instagram:hover {
+  background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f87171 100%);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 8px 20px rgba(225, 48, 108, 0.4);
+}
+
 
 /* Youtube */
 .fa-youtube {

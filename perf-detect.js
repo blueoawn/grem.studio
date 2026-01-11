@@ -47,26 +47,26 @@
   const qualityPresets = {
     high: {
       // Langston's Ant settings
-      antCount: 30,
-      antStepsPerFrame: 3,
+      antCount: 18,
+      antStepsPerFrame: 2,
       // Waves settings
-      waveSamples: 600,
-      particleCount: 300,
+      waveSamples: 400,
+      particleCount: 180,
       // Shared
       targetFps: 30
     },
     medium: {
-      antCount: 20,
-      antStepsPerFrame: 2,
-      waveSamples: 400,
-      particleCount: 180,
+      antCount: 12,
+      antStepsPerFrame: 1,
+      waveSamples: 300,
+      particleCount: 120,
       targetFps: 30
     },
     low: {
-      antCount: 12,
+      antCount: 8,
       antStepsPerFrame: 1,
-      waveSamples: 250,
-      particleCount: 100,
+      waveSamples: 200,
+      particleCount: 60,
       targetFps: 30
     }
   };
