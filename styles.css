@@ -2,6 +2,53 @@
    TEAM GREM - Early 2000s Style CSS
    ================================================ */
 
+/* === PARALLAX GRID PATTERN === */
+/* Container sits behind the wave canvas (z-index: -1) */
+.parallax-grid-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.parallax-grid-layer-1,
+.parallax-grid-layer-2,
+.parallax-grid-layer-3 {
+    position: absolute;
+    top: -50vh;
+    left: -50vw;
+    width: 200vw;
+    height: 200vh;
+    transform: translateZ(0);
+    will-change: transform;
+    pointer-events: none;
+}
+
+.parallax-grid-layer-1 {
+    background-image:
+        repeating-linear-gradient(0deg, transparent 0px, transparent 99px, rgba(255, 255, 255, 0.15) 99px, rgba(255, 255, 255, 0.15) 100px),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 99px, rgba(255, 255, 255, 0.15) 99px, rgba(255, 255, 255, 0.15) 100px);
+    background-size: 100px 100px;
+}
+
+.parallax-grid-layer-2 {
+    background-image:
+        repeating-linear-gradient(0deg, transparent 0px, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 49px, rgba(255, 255, 255, 0.1) 49px, rgba(255, 255, 255, 0.1) 50px);
+    background-size: 50px 50px;
+}
+
+.parallax-grid-layer-3 {
+    background-image:
+        repeating-linear-gradient(0deg, transparent 0px, transparent 24px, rgba(255, 255, 255, 0.06) 24px, rgba(255, 255, 255, 0.06) 25px),
+        repeating-linear-gradient(90deg, transparent 0px, transparent 24px, rgba(255, 255, 255, 0.06) 24px, rgba(255, 255, 255, 0.06) 25px);
+    background-size: 25px 25px;
+}
+
 /* === RESET & BASE STYLES === */
 * {
     margin: 0;

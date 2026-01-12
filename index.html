@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="ant-background.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body style="margin:0; padding:0; overflow-x:hidden; background:rgba(6,7,10,0.95);">
+<body style="margin:0; padding:0; overflow-x:hidden; background:rgba(6,7,10,0.95); position:relative; z-index:0;">
     <nav id="navbar" style="position:center; top:0; left:0; right:0; background:rgba(10,10,14,0.98); z-index:1000; padding:15px 0; box-shadow:0 2px 20px rgba(0,0,0,0.5); width:100%;">
         <ul style="max-width:1200px; margin:0 auto; padding:0 40px; list-style:none; display:flex; gap:30px; align-items:center; flex-wrap:wrap;    justify-content: center;">
             <li style="margin:0;"><a href="index.html" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Home</a></li>
@@ -17,6 +17,14 @@
         </ul>
     </nav>
     <canvas id="c" aria-hidden="true" style="position:fixed; inset:0; z-index:-1; pointer-events:none;"></canvas>
+    
+    <!-- Parallax Grid Container (behind the wave canvas) -->
+    <div class="parallax-grid-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-2; overflow:hidden; pointer-events:none;">
+        <div class="parallax-grid-layer-1"></div>
+        <div class="parallax-grid-layer-2"></div>
+        <div class="parallax-grid-layer-3"></div>
+    </div>
+    
     <div id="container" style="position:relative; z-index:2; max-width:1200px; margin:32px auto; background:rgba(10,10,14,0.85); padding:40px; box-shadow:0 0 60px rgba(0,0,0,0.5); border-radius:16px;">
 
         

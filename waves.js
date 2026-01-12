@@ -113,8 +113,8 @@ function draw(now) {
   last = now;
   t += dt * transSpeed;
 
-  ctx.fillStyle = 'rgba(6,7,10,0.18)';
-  ctx.fillRect(0, 0, W, H);
+  // Clear canvas to transparent so the parallax grid shows through
+  ctx.clearRect(0, 0, W, H);
 
   const cy = H / 2;
   const amplitude = Math.min(H, 420 * DPR);
