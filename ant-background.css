@@ -27,7 +27,7 @@
 }
 
 /* Make sure page content stays above the canvas */
-body > *:not(#ant-canvas) {
+body > *:not(#ant-canvas):not(#c):not(.parallax-grid-container) {
   position: relative;
   z-index: 1;
 }
