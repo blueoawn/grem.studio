@@ -49,12 +49,12 @@
                 <section class="info-section">
                     <h3>What's New?</h3>
                     <ul>
-                        <li><strong>1/13/2026: This website now runs on php! Enjoy the consistent navbar across all pages.</strong></li>
-                        <li><strong>1/11/2026: Happy New Year! There's now a page for the probability calculator for the SWU cardgame, check it out <a href="https://grem.studio/deck-helper">here</a></strong></li>
-                        <li><strong>Added our instagram button!</strong></li>
+                        <li><strong>1/13/2026:</strong> This website now runs on php! Enjoy the consistent navbar across all pages.</li>
+                        <li><strong>1/11/2026: </strong>Happy New Year! There's now a page for the probability calculator for the SWU cardgame, check it out <a href="https://grem.studio/deck-helper">here</a></li>
+                        <li> also added our instagram button!</li>
                         <li><strong>Our minecraft server is now <span class="live-text">live!</span> Come play at minecraft.grem.studio!</strong></li>
                         <li><strong>December 10, 2025:</strong> Site launched! Check out our author links!</li>
-                        <li><strong>Coming Soon:</strong> Multiplayer browser arena deathmatch game</li>
+                        <li><strong>Coming Soon:</strong> A webpage anyone can contribute to or vandalize</li>
                         <li><strong>Featured:</strong>Our game jam project <a href="https://itch.io/jam/jinglegamejam2025/rate/4103999">Half Dozen Heroz</a></li>
                     </ul>
                 </section>
