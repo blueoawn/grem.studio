@@ -49,6 +49,7 @@
                 <section class="info-section">
                     <h3>What's New?</h3>
                     <ul>
+                        <li><strong>1/13/2026: This website now runs on php! Enjoy the consistent navbar across all pages.</strong></li>
                         <li><strong>1/11/2026: Happy New Year! There's now a page for the probability calculator for the SWU cardgame, check it out <a href="https://grem.studio/deck-helper">here</a></strong></li>
                         <li><strong>Added our instagram button!</strong></li>
                         <li><strong>Our minecraft server is now <span class="live-text">live!</span> Come play at minecraft.grem.studio!</strong></li>
