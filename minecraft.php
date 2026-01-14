@@ -9,13 +9,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body class="wp2005">
-      <nav id="navbar" style="position:center; top:0; left:0; right:0; background:rgba(10,10,14,0.98); z-index:1000; padding:15px 0; box-shadow:0 2px 20px rgba(0,0,0,0.5); width:100%;">
-        <ul style="max-width:1200px; margin:0 auto; padding:0 40px; list-style:none; display:flex; gap:30px; align-items:center; flex-wrap:wrap;    justify-content: center;">
-            <li style="margin:0;"><a href="index.html" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Home</a></li>
-            <li style="margin:0;"><a href="minecraft.html" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Games</a></li>
-            <li style="margin:0;"><a href="#authors" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Founders</a></li>
-        </ul>
-    </nav>
+  <?php include 'navbar.php'; ?>
   <div class="wrap">
     <div class="header">
       <h1>How to Connect to the GREM Minecraft Server</h1>
@@ -45,7 +39,7 @@
         <ul>
           <li><strong>Version mismatch:</strong> If you see "Incompatible client", switch your installation to the server version listed above.</li>
           <li><strong>Can't resolve hostname:</strong> Try the raw IP if provided on our homepage; otherwise check your DNS settings or just reboot the router (ancient ritual, still works).</li>
-          <li><strong>Connection timed out:</strong> Make sure your firewall isn’t blocking <em>javaw.exe</em>. Add an allow rule, then retry.</li>
+          <li><strong>Connection timed out:</strong> Make sure your firewall isn't blocking <em>javaw.exe</em>. Add an allow rule, then retry.</li>
           <li><strong>Mods/Forge:</strong> If you use mods, please dont. We vanilla. kinda</li>
         </ul>
       </div>
@@ -83,13 +77,13 @@
       <h2>Optional: Using Direct Connect (Java)</h2>
       <p>If you just want to jump in fast:</p>
       <div class="codebox">Multiplayer → Direct Connect → minecraft.grem.studio</div>
-      <p>This won’t save the server in your list. Works when ur in a hurry.</p>
+      <p>This won't save the server in your list. Works when ur in a hurry.</p>
 
       <h2>Common Fixes (when things act weird)</h2>
       <ul>
         <li><strong>Update Java:</strong> Use the latest Java runtime that matches your Minecraft version. Old Java can be crusty.</li>
         <li><strong>Reboot everything:</strong> Launcher, PC, router.</li>
-        <li><strong>Check status:</strong> If we’re doing maintenance, the server might be offline. Try again later or see our Discord announcements.</li>
+        <li><strong>Check status:</strong> If we're doing maintenance, the server might be offline. Try again later or see our Discord announcements.</li>
       </ul>
 
       <div class="warning">
