@@ -62,7 +62,7 @@
         <li class="nav-dropdown" style="margin:0; position:relative;">
             <a href="#" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Games <span style="font-size:0.7em;">▼</span></a>
             <ul class="dropdown-menu">
-                <li><a href="minecraft.php">Minecraft</a></li>
+                <li><a href="https://grem.studio/minecraft.php">Minecraft</a></li>
                 <li><a href="https://hdh.grem.studio">Half Dozen Heroz</a></li>
                 <li><a href="https://grem.studio/deck-helper">SWU Deck Helper</a></li>
             </ul>
