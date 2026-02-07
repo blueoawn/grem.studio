@@ -70,7 +70,7 @@
         <li class="nav-dropdown" style="margin:0; position:relative;">
             <a href="#" style="color:#00ffff; text-decoration:none; font-weight:bold; transition:color 0.2s;">Collaborate <span style="font-size:0.7em;">▼</span></a>
             <ul class="dropdown-menu">
-                <li><a href="graffiti-together/">Graffiti Together</a></li>
+                <li><a href="https://grem.studio/graffiti-together/">Graffiti Together</a></li>
             </ul>
         </li>
         <li class="nav-dropdown" style="margin:0; position:relative;">
