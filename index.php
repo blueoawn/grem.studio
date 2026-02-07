@@ -49,6 +49,7 @@
                 <section class="info-section">
                     <h3>What's New?</h3>
                     <ul>
+                        <li><strong>2/7/2026:</strong> There's now a collaberative drawing space appropriately titled <a href="https://grem.studio/graffiti-together">Graffiti Together</a> Come and check it out! </li>
                         <li><strong>1/13/2026:</strong> This website now runs on php! Enjoy the consistent navbar across all pages.</li>
                         <li><strong>1/11/2026: </strong>Happy New Year! There's now a page for the probability calculator for the SWU cardgame, check it out <a href="https://grem.studio/deck-helper">here</a></li>
                         <li> also added our instagram button!</li>
