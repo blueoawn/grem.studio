@@ -1,3 +1,6 @@
 [submodule "deck-helper"]
 	path = deck-helper
 	url = https://github.com/blueoawn/deck-helper.git
+[submodule "graffiti-together"]
+	path = graffiti-together
+	url = https://github.com/blueoawn/graffiti-together.git
