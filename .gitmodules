@@ -4,3 +4,6 @@
 [submodule "graffiti-together"]
 	path = graffiti-together
 	url = https://github.com/blueoawn/graffiti-together.git
+[submodule "picto-forum"]
+	path = picto-forum
+	url = https://github.com/blueoawn/picto-forum.git
