@@ -1,0 +1,10 @@
+{
+  "name": "site-feed-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Interactive CLI tools for the site-feed server operator to manage admin accounts",
+  "type": "module",
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.2"
+  }
+}

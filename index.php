@@ -35,30 +35,15 @@
                         <h2 class="grungy-text">Introducing Team Grem Studio</h2>
                     </div>
 
-                <p style="padding-top:15px;">You've stumbled upon the weird corner of the internet. Here at GREM, we're a bunch of degenerate gamers staying up at crackhead hours to bring you the latest updates, creative content, and a some random cool fuck ass shit.</p>
-
-                <section class="info-section">
-                    <h3>Quick Access</h3>
-                    <ul>
-                        <li>Try our <a href="https://grem.studio/deck-helper">Probability Calculator for the Star Wars: Unlimited TCG</a></li>
-                        <li>Connect to our Minecraft server: <a href="minecraft.php"> minecraft.grem.studio</a></li>
-                        <li>Try our first game: <a href="https://hdh.grem.studio">Half Dozen Heroz</a></li>
-                    </ul>
-                </section>
+                <p style="padding-top:15px;">You've stumbled upon the weird corner of the internet. Here at GREM, we're a bunch of degenerate gamers staying up at crackhead hours to bring you the latest updates, creative content, and some random cool fuck ass shit.</p>
 
                 <section class="info-section">
                     <h3>What's New?</h3>
-                    <ul>
-                        <li><strong>2/7/2026:</strong> There's now a collaberative drawing space appropriately titled <a href="https://grem.studio/graffiti-together">Graffiti Together</a> Come and check it out! </li>
-                        <li><strong>1/13/2026:</strong> This website now runs on php! Enjoy the consistent navbar across all pages.</li>
-                        <li><strong>1/11/2026: </strong>Happy New Year! There's now a page for the probability calculator for the SWU cardgame, check it out <a href="https://grem.studio/deck-helper">here</a></li>
-                        <li> also added our instagram button!</li>
-                        <li><strong>Our minecraft server is now <span class="live-text">live!</span> Come play at minecraft.grem.studio!</strong></li>
-                        <li><strong>December 10, 2025:</strong> Site launched! Check out our author links!</li>
-                        <li><strong>Coming Soon:</strong> A webpage anyone can contribute to or vandalize</li>
-                        <li><strong>Featured:</strong>Our game jam project <a href="https://itch.io/jam/jinglegamejam2025/rate/4103999">Half Dozen Heroz</a></li>
+                    <ul id="whats-new-list">
+                        <li>Loading latest updates...</li>
                     </ul>
                 </section>
+                <script type="module" src="feed-widget.js?v=2"></script>
 
 
             </div>
