@@ -1,0 +1,78 @@
+/* 2005-style WordPress vibes */
+body.wp2005 {
+  background: #0e0e12;
+  color: #ffffff;
+  font-family: Georgia, "Times New Roman", serif;
+}
+.wrap {
+  width: 760px;
+  margin: 24px auto;
+  background: #14141a;
+  border: 1px solid #2a2a33;
+  box-shadow: 0 0 12px rgba(0,0,0,0.15);
+}
+.header {
+  background: #1a1a22;
+  color: #ffffff;
+  border-bottom: 4px double #8b008b;
+  padding: 18px 22px;
+}
+.header h1 { font-size: 26px; margin: 0; letter-spacing: 1px; }
+.header p { margin: 6px 0 0; font-style: italic; color: #ddd; }
+.content {
+  padding: 18px 22px 28px;
+  line-height: 1.6;
+  color: #eeeeee;
+}
+h2 { color: #d59aff; border-bottom: 1px dotted #444; padding-bottom: 6px; }
+h3 { color: #8cff8c; }
+.note {
+  background: #1a1a18;
+  border: 1px solid #e0e000;
+  padding: 10px 12px;
+  margin: 12px 0;
+  color: #f5f5f5;
+}
+.codebox {
+  background: #1c1c24;
+  border: 1px solid #3a3a46;
+  padding: 2px 4px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: #e6e6e6;
+}
+ul { margin-left: 22px; }
+li { padding: 2px; }
+.footer {
+  background: #121218;
+  border-top: 1px solid #2a2a33;
+  color: #cccccc;
+  font-size: 12px;
+  padding: 12px 22px;
+  text-align: center;
+}
+.widget { border: 1px solid #2a2a33; background: #16161d; padding: 10px; margin: 14px 0; color: #eaeaea; }
+.callout { background: #112414; border: 1px solid #1f5f27; padding: 10px; color: #cfe9d1; }
+.warning { background: #2a1111; border: 1px solid #7a2a2a; padding: 10px; color: #f3c6c6; }
+.legacy-link { color: #99ccff; text-decoration: underline; }
+.social-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.2s;
+  font-size: 14px;
+}
+.social-badge.discord {
+  background: #5865F2;
+  color: white;
+}
+.social-badge.discord:hover {
+  background: #4752C4;
+  transform: scale(1.05);
+}
+.social-badge i {
+  font-size: 18px;
+}

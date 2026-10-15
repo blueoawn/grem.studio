@@ -1,0 +1,15 @@
+[Unit]
+Description=Site Feed admin portal frontend server
+After=network-online.target spacetimedb.service
+Wants=network-online.target spacetimedb.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/webapp/server/grem.studio/site-feed/admin
+Environment=PATH=/home/webapp/.nvm/versions/node/v20.19.6/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/webapp/.nvm/versions/node/v20.19.6/bin/npx serve -s dist -l 8082
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

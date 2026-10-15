@@ -1,0 +1,33 @@
+/* ================================================
+   Langston's Ant Background Effect - Styles
+   ================================================ */
+
+/* Configuration Variables */
+:root {
+  --cell-size: 12;
+  --ant-count: 12;
+  --hue-speed: 120deg;
+  --cell-blur: 2px;
+  --glow-strength: 2;
+  --cell-alpha: 5;
+}
+
+/* Canvas Styling */
+#ant-canvas {
+  position: fixed;
+  inset: 20%;
+  pointer-events: none;
+  z-index: 0;
+
+  mix-blend-mode: screen;
+  filter:
+    blur(var(--cell-blur, 6px))
+    saturate(120%)
+    contrast(105%);
+}
+
+/* Make sure page content stays above the canvas */
+body > *:not(#ant-canvas):not(#c):not(.parallax-grid-container) {
+  position: relative;
+  z-index: 1;
+}
