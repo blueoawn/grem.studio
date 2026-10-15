@@ -43,7 +43,7 @@
                         <li>Loading latest updates...</li>
                     </ul>
                 </section>
-                <script type="module" src="feed-widget.js?v=2"></script>
+                <script type="module" src="feed-widget.js?v=3"></script>
 
 
             </div>
