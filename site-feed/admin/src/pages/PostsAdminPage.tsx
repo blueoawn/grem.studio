@@ -51,6 +51,10 @@ export function PostsAdminPage() {
 
   return (
     <div className="create-thread-container">
+      <nav className="view-tabs" aria-label="Admin views">
+        <a href="/admin/" aria-current="page">Site feed</a>
+        <a href="/publisher/">Web serial</a>
+      </nav>
       <div className="page-header">
         <h2>What's New? Posts</h2>
         <div className="header-actions">

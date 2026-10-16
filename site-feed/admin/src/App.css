@@ -438,3 +438,9 @@ textarea {
     flex-direction: column;
   }
 }
+
+/* Switch between the site-feed admin (/admin/) and web serial publisher (/publisher/). */
+.view-tabs { display: flex; gap: 4px; border-bottom: 1px solid #1f2430; margin-bottom: 24px; }
+.view-tabs a { padding: 8px 14px; font-weight: bold; color: #8a93a3; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.view-tabs a:hover { color: #00ffff; }
+.view-tabs a[aria-current="page"] { color: #00ffff; border-bottom-color: #ff00ff; }

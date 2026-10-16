@@ -59,7 +59,7 @@ function listAdmins() {
   const output = runSpacetime([
     "sql",
     DB_NAME,
-    "SELECT username, created_at FROM admin_accounts",
+    "SELECT username, created_at FROM accounts WHERE is_admin = true",
     "-y",
   ]);
   return parseSqlTable(output).rows;
@@ -72,7 +72,7 @@ async function main() {
   try {
     admins = listAdmins();
   } catch (err) {
-    console.error("Failed to query admin_accounts:");
+    console.error("Failed to query admin accounts:");
     console.error((err.stderr || err.message || String(err)).toString().trim());
     process.exit(1);
   }

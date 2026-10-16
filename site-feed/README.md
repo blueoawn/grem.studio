@@ -3,7 +3,13 @@
 Live "What's New?" feed for the GREM Studio homepage, plus the admin portal
 used to publish it. Three pieces, sharing the same SpacetimeDB module:
 
-- `server/spacetimedb/` — the Rust SpacetimeDB module (`admin_accounts`, `posts`)
+- `server/spacetimedb/` — the Rust SpacetimeDB module for the whole site:
+  - `src/accounts.rs`: one private `accounts` table (Argon2 hashes, `is_admin`)
+    and `sessions`, one `login`, plus the `my_account` and `account_audit` views.
+    Admins use `/admin/`; publishers use `/publisher/`.
+  - `src/lib.rs`: the homepage feed `posts`.
+  - `src/serial.rs`: the **web serial** `serial_posts` (see `../web-serial/README.md`).
+- To update the live site, run `../deploy.sh` on the host.
 - `admin/` — a React admin UI for logging in and creating/editing/deleting posts,
   served at `grem.studio/admin/`
 - `widget/` — a tiny vanilla-TS script that renders the live feed into `index.php`'s
@@ -69,7 +75,7 @@ Re-export the var and republish to fix it.
 Also note: a breaking schema change to any table (e.g. adding a
 non-nullable column) requires `spacetime publish --delete-data`, which wipes
 **every** table in the database, not just the one that changed — including
-`admin_accounts`. Re-run the admin-creation step below after any such
+`accounts`. Re-run the admin-creation step below after any such
 republish.
 
 ### 4. Create your first admin account
@@ -129,6 +135,16 @@ Both scripts default to the `site-feed` database name and whatever server the
 `spacetime` CLI is currently configured against (see `spacetime server list`).
 Override the database name with `SITE_FEED_DB=other-name node add-admin.mjs`
 if you ever publish under a different name.
+
+### Web serial publishers
+
+Publishers are managed from the `/admin/` browser console after an admin logs in:
+`createPublisher()`, `deletePublisher()` and `auditAccounts()` (every account, with
+role, post count and active sessions). Admins and publishers share one `accounts`
+table, so usernames are unique across both. A publisher who logs in at `/admin/`
+is shown a link to `/publisher/` instead of the admin portal.
+
+All passwords are 12-72 characters and hashed with Argon2.
 
 ## Admin app
 

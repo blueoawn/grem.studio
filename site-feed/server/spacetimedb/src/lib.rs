@@ -1,24 +1,11 @@
 use spacetimedb::{ReducerContext, Table};
-use spacetimedb::rand::Rng;
-use sha2::{Sha256, Digest};
+
+mod accounts;
+mod serial;
+
+use accounts::require_admin;
 
 // -- Tables --
-
-#[spacetimedb::table(name = admin_accounts, public)]
-pub struct AdminAccount {
-    #[primary_key]
-    pub username: String,
-    pub password_hash: String,
-    pub created_at: u64,
-}
-
-#[spacetimedb::table(name = logged_in_admins, public)]
-pub struct LoggedInAdmin {
-    #[primary_key]
-    pub identity: spacetimedb::Identity,
-    pub username: String,
-    pub logged_in_at: u64,
-}
 
 #[spacetimedb::table(name = posts, public)]
 pub struct Post {
@@ -44,85 +31,10 @@ pub struct Post {
     pub updated_at: u64,
 }
 
-// -- Owner identity (bakes in who may create new admin accounts) --
-
-// Dev-only placeholder: matches no real identity. If this ends up published
-// (SITE_FEED_OWNER_IDENTITY wasn't set in the shell that ran `cargo
-// build`/`spacetime publish` — every build re-evaluates option_env!, so a
-// rebuild without the var silently reverts to this and locks out even the
-// real operator), require_owner below fails loudly instead of just denying
-// everyone with an indistinguishable "not you" error.
-const PLACEHOLDER_OWNER_IDENTITY_HEX: &str =
-    "0000000000000000000000000000000000000000000000000000000000000000";
-
-const OWNER_IDENTITY_HEX: &str = match option_env!("SITE_FEED_OWNER_IDENTITY") {
-    Some(v) => v,
-    None => PLACEHOLDER_OWNER_IDENTITY_HEX,
-};
-
-fn require_owner(ctx: &ReducerContext) -> Result<(), String> {
-    if OWNER_IDENTITY_HEX == PLACEHOLDER_OWNER_IDENTITY_HEX {
-        return Err(
-            "Server misconfiguration: this module was published without SITE_FEED_OWNER_IDENTITY \
-             set, so no identity (not even the real operator) can perform this action. Set \
-             SITE_FEED_OWNER_IDENTITY to your `spacetime login show` identity and republish."
-                .into(),
-        );
-    }
-    let owner = spacetimedb::Identity::from_hex(OWNER_IDENTITY_HEX)
-        .map_err(|_| "Server misconfiguration: invalid SITE_FEED_OWNER_IDENTITY".to_string())?;
-    if ctx.sender != owner {
-        return Err("This action may only be invoked by the server operator's CLI identity".into());
-    }
-    Ok(())
-}
-
 // -- Helpers --
 
 fn now_micros(ctx: &ReducerContext) -> u64 {
     ctx.timestamp.to_micros_since_unix_epoch() as u64
-}
-
-fn hash_password(ctx: &ReducerContext, password: &str, username: &str) -> String {
-    let mut salt_bytes = [0u8; 16];
-    ctx.rng().fill(&mut salt_bytes);
-    let salt = hex::encode(&salt_bytes);
-
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    hasher.update(salt.as_bytes());
-    hasher.update(username.as_bytes());
-    let hash = hasher.finalize();
-
-    format!("{}:{}", salt, hex::encode(hash))
-}
-
-fn verify_password(password: &str, stored_hash: &str, username: &str) -> bool {
-    let parts: Vec<&str> = stored_hash.split(':').collect();
-    if parts.len() != 2 {
-        return false;
-    }
-    let salt = parts[0];
-    let expected_hash = parts[1];
-
-    let mut hasher = Sha256::new();
-    hasher.update(password.as_bytes());
-    hasher.update(salt.as_bytes());
-    hasher.update(username.as_bytes());
-    let computed_hash = hex::encode(hasher.finalize());
-
-    computed_hash == expected_hash
-}
-
-fn validate_username(username: &str) -> Result<String, String> {
-    let trimmed = username.trim().to_string();
-    if trimmed.is_empty() || trimmed.len() > 32 {
-        return Err("Username must be 1-32 characters".into());
-    }
-    if !trimmed.chars().all(|c| c.is_alphanumeric() || c == '_') {
-        return Err("Username may only contain letters, digits, and underscores".into());
-    }
-    Ok(trimmed)
 }
 
 fn validate_title(title: &str) -> Result<String, String> {
@@ -163,109 +75,11 @@ fn validate_category(category: &str) -> Result<String, String> {
     Ok(trimmed)
 }
 
-fn require_admin(ctx: &ReducerContext) -> Result<String, String> {
-    ctx.db
-        .logged_in_admins()
-        .identity()
-        .find(&ctx.sender)
-        .map(|a| a.username)
-        .ok_or_else(|| "Must be logged in as an admin".to_string())
-}
-
 // -- Lifecycle --
 
 #[spacetimedb::reducer(init)]
 pub fn init(_ctx: &ReducerContext) {
     log::info!("Site Feed module initialized!");
-}
-
-// -- Auth Reducers --
-
-#[spacetimedb::reducer]
-pub fn login(ctx: &ReducerContext, username: String, password: String) -> Result<(), String> {
-    let trimmed = validate_username(&username)?;
-
-    let account = ctx
-        .db
-        .admin_accounts()
-        .username()
-        .find(&trimmed)
-        .ok_or_else(|| "Invalid username or password".to_string())?;
-
-    if !verify_password(&password, &account.password_hash, &account.username) {
-        return Err("Invalid username or password".into());
-    }
-
-    let timestamp = now_micros(ctx);
-    ctx.db.logged_in_admins().identity().delete(&ctx.sender);
-    ctx.db.logged_in_admins().insert(LoggedInAdmin {
-        identity: ctx.sender,
-        username: account.username,
-        logged_in_at: timestamp,
-    });
-
-    Ok(())
-}
-
-#[spacetimedb::reducer]
-pub fn logout(ctx: &ReducerContext) -> Result<(), String> {
-    ctx.db.logged_in_admins().identity().delete(&ctx.sender);
-    Ok(())
-}
-
-#[spacetimedb::reducer]
-pub fn create_admin_account(ctx: &ReducerContext, username: String, password: String) -> Result<(), String> {
-    require_owner(ctx)?;
-
-    let trimmed = validate_username(&username)?;
-    if password.len() < 8 {
-        return Err("Password must be at least 8 characters".into());
-    }
-    if password.len() > 72 {
-        return Err("Password too long (max 72 characters)".into());
-    }
-    if ctx.db.admin_accounts().username().find(&trimmed).is_some() {
-        return Err(format!("Account '{}' already exists", trimmed));
-    }
-
-    let password_hash = hash_password(ctx, &password, &trimmed);
-    let timestamp = now_micros(ctx);
-
-    ctx.db.admin_accounts().insert(AdminAccount {
-        username: trimmed,
-        password_hash,
-        created_at: timestamp,
-    });
-
-    Ok(())
-}
-
-#[spacetimedb::reducer]
-pub fn delete_admin_account(ctx: &ReducerContext, username: String) -> Result<(), String> {
-    require_owner(ctx)?;
-
-    let trimmed = validate_username(&username)?;
-    let account = ctx
-        .db
-        .admin_accounts()
-        .username()
-        .find(&trimmed)
-        .ok_or_else(|| format!("Account '{}' does not exist", trimmed))?;
-
-    // Log out any active sessions for this admin so a deleted account can't
-    // keep acting through an already-authenticated identity.
-    let sessions: Vec<_> = ctx
-        .db
-        .logged_in_admins()
-        .iter()
-        .filter(|s| s.username == account.username)
-        .collect();
-    for session in sessions {
-        ctx.db.logged_in_admins().identity().delete(&session.identity);
-    }
-
-    ctx.db.admin_accounts().username().delete(&account.username);
-    Ok(())
 }
 
 // -- Post Reducers --

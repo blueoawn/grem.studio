@@ -11,6 +11,7 @@ import {
   type SubscriptionEventContext,
   type ReducerEventContext,
 } from "../module_bindings";
+import { installAdminConsole } from "../adminConsole";
 
 const SPACETIMEDB_URI = import.meta.env.DEV
   ? "ws://localhost:3000"
@@ -27,6 +28,8 @@ export interface SpacetimeState {
   connection: DbConnection | null;
   identity: string | null;
   currentAdmin: string | null;
+  /** Logged in, but as a publisher: /admin/ sends them to /publisher/. */
+  currentPublisher: string | null;
   connected: boolean;
   dataReady: boolean;
   version: number;
@@ -36,6 +39,7 @@ export const SpacetimeContext = createContext<SpacetimeState>({
   connection: null,
   identity: null,
   currentAdmin: null,
+  currentPublisher: null,
   connected: false,
   dataReady: false,
   version: 0,
@@ -82,14 +86,16 @@ export function SpacetimeProvider({ children }: { children: ReactNode }) {
           conn
             .subscriptionBuilder()
             .onApplied(onSubscriptionApplied)
-            .subscribe("SELECT * FROM logged_in_admins");
+            .subscribe("SELECT * FROM my_account");
           conn
             .subscriptionBuilder()
             .onApplied(onSubscriptionApplied)
             .subscribe("SELECT * FROM posts");
+          // Every account; rows only for logged-in admins. Read with auditAccounts().
+          conn.subscriptionBuilder().subscribe("SELECT * FROM account_audit");
 
-          conn.db.loggedInAdmins.onInsert(bump);
-          conn.db.loggedInAdmins.onDelete(bump);
+          conn.db.myAccount.onInsert(bump);
+          conn.db.myAccount.onDelete(bump);
           conn.db.posts.onInsert(bump);
           conn.db.posts.onUpdate(bump);
           conn.db.posts.onDelete(bump);
@@ -118,15 +124,14 @@ export function SpacetimeProvider({ children }: { children: ReactNode }) {
       .build();
   }, [bump]);
 
-  let currentAdmin: string | null = null;
-  if (connection && identity) {
-    for (const admin of connection.db.loggedInAdmins.iter()) {
-      if ((admin.identity as { toHexString(): string }).toHexString() === identity) {
-        currentAdmin = admin.username;
-        break;
-      }
-    }
-  }
+  // my_account holds only this browser's own login, if any.
+  const account = connection ? [...connection.db.myAccount.iter()][0] : undefined;
+  const currentAdmin = account?.isAdmin ? account.username : null;
+  const currentPublisher = account && !account.isAdmin ? account.username : null;
+
+  useEffect(() => {
+    if (connection && currentAdmin) return installAdminConsole(connection);
+  }, [connection, currentAdmin]);
 
   return (
     <SpacetimeContext.Provider
@@ -134,6 +139,7 @@ export function SpacetimeProvider({ children }: { children: ReactNode }) {
         connection,
         identity,
         currentAdmin,
+        currentPublisher,
         connected,
         dataReady,
         version,

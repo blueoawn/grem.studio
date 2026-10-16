@@ -6,7 +6,7 @@ interface Props {
 }
 
 export function LoginGate({ children }: Props) {
-  const { connection, currentAdmin, dataReady } = useSpacetime();
+  const { connection, currentAdmin, currentPublisher, dataReady } = useSpacetime();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,6 +17,22 @@ export function LoginGate({ children }: Props) {
 
   if (currentAdmin) {
     return <>{children}</>;
+  }
+
+  // One account system: publishers can log in, but /admin/ is for admins only.
+  if (currentPublisher) {
+    return (
+      <div className="username-gate">
+        <div className="username-gate-card">
+          <h1>Admins only</h1>
+          <p><strong>{currentPublisher}</strong> is a publisher account. Publishers write at the web serial publisher page.</p>
+          <div className="form-actions">
+            <a className="btn-primary" href="/publisher/">Go to /publisher/</a>
+            <button className="secondary" onClick={() => connection?.reducers.logout({})}>Log out</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const handleLogin = (e: FormEvent) => {
@@ -62,7 +78,7 @@ export function LoginGate({ children }: Props) {
         </form>
         {error && <p className="error">{error}</p>}
         <div className="info-box">
-          <p><strong>No account?</strong> Admin accounts are created by the server operator only. Ask them to run <code>create_admin_account</code> for you.</p>
+          <p><strong>No account?</strong> Admin accounts are created by the server operator with <code>scripts/add-admin.mjs</code>. Publisher accounts are created by an admin.</p>
         </div>
       </div>
     </div>
