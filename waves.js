@@ -28,7 +28,7 @@ if (noiseSlider) noiseSlider.oninput = () => { noiseTarget = parseFloat(noiseSli
 if (speedSlider) speedSlider.oninput = () => { transSpeed = parseFloat(speedSlider.value) * 3; };
 if (resetBtn) resetBtn.onclick = () => { regenerate(); };
 
-let W = 0, H = 0, DPR = Math.max(1, window.devicePixelRatio || 1);
+let W = 0, H = 0, DPR = window.PerfSettings?.getDpr() || 1;
 function resize() {
   W = Math.floor(innerWidth * DPR);
   H = Math.floor(innerHeight * DPR);
@@ -64,9 +64,13 @@ function buildGradients() {
   cachedGradients.waveD.addColorStop(1, 'rgba(59, 130, 246, 0.35)');
 }
 
+let resizeTimer = 0;
 addEventListener('resize', () => {
-  resize();
-  buildGradients(); // Rebuild gradients on resize
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    resize();
+    buildGradients(); // Rebuild gradients on resize
+  }, 150);
 });
 resize();
 buildGradients(); // Initial gradient build
@@ -104,10 +108,7 @@ let last = performance.now();
 
 function draw(now) {
   // Frame rate limiting for 30fps
-  if (!frameLimiter(now)) {
-    requestAnimationFrame(draw);
-    return;
-  }
+  if (!frameLimiter(now)) return;
 
   const dt = Math.min(40, now - last) / 1000;
   last = now;
@@ -233,7 +234,9 @@ function draw(now) {
   }
 
   for (let k = 0; k < harmonics; k++) phases[k] += 0.0008 + 0.0012 * Math.sin(t * 0.2 + k);
-
-  requestAnimationFrame(draw);
 }
-requestAnimationFrame(draw);
+if (window.PerfSettings?.createLoop) {
+  window.PerfSettings.createLoop(canvas, draw);
+} else {
+  (function loop(now) { draw(now); requestAnimationFrame(loop); })(performance.now());
+}

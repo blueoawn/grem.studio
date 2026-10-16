@@ -9,23 +9,31 @@ document.addEventListener('DOMContentLoaded', function() {
     return true;
 });
 
-// Parallax grid effect
-document.addEventListener('scroll', function() {
-    const scrollY = window.scrollY;
-    const gridLayer1 = document.querySelector('.parallax-grid-layer-1');
-    const gridLayer2 = document.querySelector('.parallax-grid-layer-2');
-    const gridLayer3 = document.querySelector('.parallax-grid-layer-3');
-    
-    if (gridLayer1) {
-        gridLayer1.style.transform = `translateY(${scrollY * 0.1}px)`;
+// Parallax grid effect (batched via requestAnimationFrame, cached lookups)
+(function() {
+    if (window.PerfSettings?.reducedMotion) return;
+    const layers = [
+        [document.querySelector('.parallax-grid-layer-1'), 0.1],
+        [document.querySelector('.parallax-grid-layer-2'), 0.25],
+        [document.querySelector('.parallax-grid-layer-3'), 0.4]
+    ].filter(function(l) { return l[0]; });
+    if (!layers.length) return;
+
+    let ticking = false;
+    function update() {
+        ticking = false;
+        const scrollY = window.scrollY;
+        for (let i = 0; i < layers.length; i++) {
+            layers[i][0].style.transform = 'translateY(' + scrollY * layers[i][1] + 'px)';
+        }
     }
-    if (gridLayer2) {
-        gridLayer2.style.transform = `translateY(${scrollY * 0.25}px)`;
-    }
-    if (gridLayer3) {
-        gridLayer3.style.transform = `translateY(${scrollY * 0.4}px)`;
-    }
-});
+    document.addEventListener('scroll', function() {
+        if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(update);
+        }
+    }, { passive: true });
+})();
 
 // Add some retro console art
 console.log('%c' + `

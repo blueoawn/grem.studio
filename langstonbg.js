@@ -56,7 +56,6 @@
   }
   resizeCanvas();
   window.addEventListener('resize', resizeCanvas);
-  window.addEventListener('scroll', resizeCanvas);
 
   // Grid to store cells
   const grid = new Map();
@@ -279,10 +278,7 @@
   // Animation loop
   function animate(now) {
     // Frame rate limiting for 30fps
-    if (!frameLimiter(now)) {
-      requestAnimationFrame(animate);
-      return;
-    }
+    if (!frameLimiter(now)) return;
 
     // Clear canvas
     ctx.clearRect(0, 0, width, height);
@@ -330,12 +326,14 @@
 
       // Shadow blur removed for performance
     });
-
-    requestAnimationFrame(animate);
   }
 
-  // Start animation
-  requestAnimationFrame(animate);
+  // Start animation (pauses when hidden/off-screen; static when reduced motion)
+  if (window.PerfSettings?.createLoop) {
+    window.PerfSettings.createLoop(canvas, animate);
+  } else {
+    (function loop(now) { animate(now); requestAnimationFrame(loop); })(performance.now());
+  }
 
   // Re-initialize on layout changes to keep edge alignment
   const ro = new ResizeObserver(() => {
