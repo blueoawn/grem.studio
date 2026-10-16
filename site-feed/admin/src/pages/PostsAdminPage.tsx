@@ -93,18 +93,18 @@ export function PostsAdminPage() {
                 <span>by {post.createdBy}</span>
               </div>
               <div className="form-actions">
-                <button className="btn-sm" onClick={() => openEdit(post)}>
+                <button className="btn-sm secondary" onClick={() => openEdit(post)}>
                   Edit
                 </button>
                 <button
-                  className="btn-sm"
+                  className="btn-sm secondary"
                   disabled={post.isArchived || index === 0}
                   onClick={() => handleMove(post.postId, true)}
                 >
                   Move up
                 </button>
                 <button
-                  className="btn-sm"
+                  className="btn-sm secondary"
                   disabled={post.isArchived || index === posts.length - 1 || posts[index + 1]?.isArchived}
                   onClick={() => handleMove(post.postId, false)}
                 >
@@ -116,7 +116,7 @@ export function PostsAdminPage() {
                 {confirmDeleteId === post.postId ? (
                   <div className="delete-confirm-block">
                     <span>Delete this post?</span>
-                    <button className="btn-sm btn-danger" onClick={() => handleDelete(post.postId)}>
+                    <button className="btn-sm danger" onClick={() => handleDelete(post.postId)}>
                       Confirm Delete
                     </button>
                     <button className="btn-sm secondary" onClick={() => setConfirmDeleteId(null)}>

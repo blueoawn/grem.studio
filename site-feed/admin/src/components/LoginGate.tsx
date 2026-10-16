@@ -27,7 +27,7 @@ export function LoginGate({ children }: Props) {
           <h1>Admins only</h1>
           <p><strong>{currentPublisher}</strong> is a publisher account. Publishers write at the web serial publisher page.</p>
           <div className="form-actions">
-            <a className="btn-primary" href="/publisher/">Go to /publisher/</a>
+            <a className="button" href="/publisher/">Go to /publisher/</a>
             <button className="secondary" onClick={() => connection?.reducers.logout({})}>Log out</button>
           </div>
         </div>
