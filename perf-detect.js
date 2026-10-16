@@ -81,10 +81,12 @@
     let lastFrameTime = 0;
 
     return function shouldRender(now) {
-      if (now - lastFrameTime < frameInterval) {
+      const elapsed = now - lastFrameTime;
+      if (elapsed < frameInterval - 1) {
         return false;
       }
-      lastFrameTime = now;
+      // Keep phase aligned to the interval so timing jitter doesn't halve the frame rate
+      lastFrameTime = elapsed > frameInterval * 2 ? now : now - (elapsed % frameInterval);
       return true;
     };
   }
