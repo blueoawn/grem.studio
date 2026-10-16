@@ -11,7 +11,7 @@ export function App() {
       <SpacetimeProvider>
         <NavbarLoader />
         <LoginGate>
-          <div className="forum-container">
+          <div className="page-column">
             <PostsAdminPage />
           </div>
         </LoginGate>

@@ -26,6 +26,19 @@ a { color: var(--cyan); transition: color 0.2s; }
 a:hover { color: var(--magenta); }
 :focus-visible { outline: 2px solid var(--magenta); outline-offset: 3px; }
 
+/* -- Page column and header: identical on /admin/, /publisher/ and /web-serial/ -- */
+main, .page-column {
+  box-sizing: border-box; max-width: 46rem; margin: 0 auto;
+  padding-block: 3rem 5rem;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page-header {
+  display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem;
+  padding-bottom: 1rem; border-bottom: 1px solid var(--line);
+}
+.page-header h1, .page-header h2 { margin: 0; font-size: clamp(2rem, 5vw, 2.8rem); color: var(--cyan); }
+
 /* -- Forms -- */
 label { display: grid; gap: 0.4rem; font: 600 0.75rem var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 input, textarea, select {

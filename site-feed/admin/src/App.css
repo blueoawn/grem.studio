@@ -4,28 +4,9 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* -- Layout -- */
+/* -- Layout (.page-column and .page-header come from the shared theme) -- */
 
-.forum-container {
-  max-width: 900px;
-  margin: 0 auto;
-  padding-block: 48px 40px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-}
-
-.create-thread-container { display: grid; gap: 24px; }
-
-.page-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--line);
-}
-.page-header h2 { font-size: clamp(1.6rem, 4vw, 2.2rem); color: var(--cyan); }
+.create-thread-container { display: grid; gap: 1.5rem; }
 
 .header-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; }
 .user-info { font: 0.8rem var(--mono); color: var(--muted); }
@@ -108,7 +89,3 @@
 .error-message { flex: 1; color: var(--ink); }
 button.error-close { padding: 0 4px; background: transparent; color: var(--muted); font-size: 1rem; flex-shrink: 0; }
 button.error-close:hover:not(:disabled) { background: transparent; color: var(--ink); }
-
-@media (max-width: 600px) {
-  .forum-container { padding-block: 32px 24px; }
-}
