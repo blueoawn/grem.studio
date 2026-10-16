@@ -7,3 +7,7 @@
 [submodule "picto-forum"]
 	path = picto-forum
 	url = https://github.com/blueoawn/picto-forum.git
+[submodule "web-serial"]
+	path = web-serial
+	url = https://github.com/blueoawn/grem-web-serial.git
+	branch = main
