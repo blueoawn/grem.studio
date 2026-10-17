@@ -1,9 +1,9 @@
-var xe = {}, wt;
+var Se = {}, wt;
 function or() {
-  if (wt) return xe;
-  wt = 1, xe.byteLength = l, xe.toByteArray = f, xe.fromByteArray = b;
-  for (var e = [], t = [], r = typeof Uint8Array < "u" ? Uint8Array : Array, n = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", s = 0, u = n.length; s < u; ++s)
-    e[s] = n[s], t[n.charCodeAt(s)] = s;
+  if (wt) return Se;
+  wt = 1, Se.byteLength = l, Se.toByteArray = f, Se.fromByteArray = b;
+  for (var e = [], t = [], r = typeof Uint8Array < "u" ? Uint8Array : Array, n = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/", a = 0, u = n.length; a < u; ++a)
+    e[a] = n[a], t[n.charCodeAt(a)] = a;
   t[45] = 62, t[95] = 63;
   function o(m) {
     var p = m.length;
@@ -22,8 +22,8 @@ function or() {
     return (p + w) * 3 / 4 - w;
   }
   function f(m) {
-    var p, w = o(m), U = w[0], g = w[1], I = new r(d(m, U, g)), T = 0, q = g > 0 ? U - 4 : U, x;
-    for (x = 0; x < q; x += 4)
+    var p, w = o(m), U = w[0], g = w[1], I = new r(d(m, U, g)), T = 0, E = g > 0 ? U - 4 : U, x;
+    for (x = 0; x < E; x += 4)
       p = t[m.charCodeAt(x)] << 18 | t[m.charCodeAt(x + 1)] << 12 | t[m.charCodeAt(x + 2)] << 6 | t[m.charCodeAt(x + 3)], I[T++] = p >> 16 & 255, I[T++] = p >> 8 & 255, I[T++] = p & 255;
     return g === 2 && (p = t[m.charCodeAt(x)] << 2 | t[m.charCodeAt(x + 1)] >> 4, I[T++] = p & 255), g === 1 && (p = t[m.charCodeAt(x)] << 10 | t[m.charCodeAt(x + 1)] << 4 | t[m.charCodeAt(x + 2)] >> 2, I[T++] = p >> 8 & 255, I[T++] = p & 255), I;
   }
@@ -36,17 +36,17 @@ function or() {
     return g.join("");
   }
   function b(m) {
-    for (var p, w = m.length, U = w % 3, g = [], I = 16383, T = 0, q = w - U; T < q; T += I)
-      g.push(v(m, T, T + I > q ? q : T + I));
+    for (var p, w = m.length, U = w % 3, g = [], I = 16383, T = 0, E = w - U; T < E; T += I)
+      g.push(v(m, T, T + I > E ? E : T + I));
     return U === 1 ? (p = m[w - 1], g.push(
       e[p >> 2] + e[p << 4 & 63] + "=="
     )) : U === 2 && (p = (m[w - 2] << 8) + m[w - 1], g.push(
       e[p >> 10] + e[p >> 4 & 63] + e[p << 2 & 63] + "="
     )), g.join("");
   }
-  return xe;
+  return Se;
 }
-var Kt = or(), Ue = class Ke {
+var Kt = or(), Te = class je {
   __time_duration_micros__;
   static MICROS_PER_MILLIS = 1000n;
   /**
@@ -76,20 +76,20 @@ var Kt = or(), Ue = class Ke {
     return this.__time_duration_micros__;
   }
   get millis() {
-    return Number(this.micros / Ke.MICROS_PER_MILLIS);
+    return Number(this.micros / je.MICROS_PER_MILLIS);
   }
   constructor(t) {
     this.__time_duration_micros__ = t;
   }
   static fromMillis(t) {
-    return new Ke(BigInt(t) * Ke.MICROS_PER_MILLIS);
+    return new je(BigInt(t) * je.MICROS_PER_MILLIS);
   }
   /** This outputs the same string format that we use in the host and in Rust modules */
   toString() {
-    const t = this.micros, r = t < 0 ? "-" : "+", n = t < 0 ? -t : t, s = n / 1000000n, u = n % 1000000n;
-    return `${r}${s}.${String(u).padStart(6, "0")}`;
+    const t = this.micros, r = t < 0 ? "-" : "+", n = t < 0 ? -t : t, a = n / 1000000n, u = n % 1000000n;
+    return `${r}${a}.${String(u).padStart(6, "0")}`;
   }
-}, Pe = class ye {
+}, Re = class ge {
   __timestamp_micros_since_unix_epoch__;
   static MICROS_PER_MILLIS = 1000n;
   get microsSinceUnixEpoch() {
@@ -124,12 +124,12 @@ var Kt = or(), Ue = class Ke {
   /**
    * The Unix epoch, the midnight at the beginning of January 1, 1970, UTC.
    */
-  static UNIX_EPOCH = new ye(0n);
+  static UNIX_EPOCH = new ge(0n);
   /**
    * Get a `Timestamp` representing the execution environment's belief of the current moment in time.
    */
   static now() {
-    return ye.fromDate(/* @__PURE__ */ new Date());
+    return ge.fromDate(/* @__PURE__ */ new Date());
   }
   /** Convert to milliseconds since Unix epoch. */
   toMillis() {
@@ -139,8 +139,8 @@ var Kt = or(), Ue = class Ke {
    * Get a `Timestamp` representing the same point in time as `date`.
    */
   static fromDate(t) {
-    const r = t.getTime(), n = BigInt(r) * ye.MICROS_PER_MILLIS;
-    return new ye(n);
+    const r = t.getTime(), n = BigInt(r) * ge.MICROS_PER_MILLIS;
+    return new ge(n);
   }
   /**
    * Get a `Date` representing approximately the same point in time as `this`.
@@ -149,7 +149,7 @@ var Kt = or(), Ue = class Ke {
    * and throws `RangeError` if the `Timestamp` is outside the range representable as a `Date`.
    */
   toDate() {
-    const r = this.__timestamp_micros_since_unix_epoch__ / ye.MICROS_PER_MILLIS;
+    const r = this.__timestamp_micros_since_unix_epoch__ / ge.MICROS_PER_MILLIS;
     if (r > BigInt(Number.MAX_SAFE_INTEGER) || r < BigInt(Number.MIN_SAFE_INTEGER))
       throw new RangeError(
         "Timestamp is outside of the representable range of JS's Date"
@@ -157,11 +157,11 @@ var Kt = or(), Ue = class Ke {
     return new Date(Number(r));
   }
   since(t) {
-    return new Ue(
+    return new Te(
       this.__timestamp_micros_since_unix_epoch__ - t.__timestamp_micros_since_unix_epoch__
     );
   }
-}, jt = class C {
+}, jt = class A {
   __uuid__;
   /**
    * The nil UUID (all zeros).
@@ -174,7 +174,7 @@ var Kt = or(), Ue = class Ke {
    * );
    * ```
    */
-  static NIL = new C(0n);
+  static NIL = new A(0n);
   static MAX_UUID_BIGINT = 0xffffffffffffffffffffffffffffffffn;
   /**
    * The max UUID (all ones).
@@ -187,7 +187,7 @@ var Kt = or(), Ue = class Ke {
    * );
    * ```
    */
-  static MAX = new C(C.MAX_UUID_BIGINT);
+  static MAX = new A(A.MAX_UUID_BIGINT);
   /**
    * Create a UUID from a raw 128-bit value.
    *
@@ -195,7 +195,7 @@ var Kt = or(), Ue = class Ke {
    * @throws {Error} If the value is outside the valid UUID range
    */
   constructor(t) {
-    if (t < 0n || t > C.MAX_UUID_BIGINT)
+    if (t < 0n || t > A.MAX_UUID_BIGINT)
       throw new Error("Invalid UUID: must be between 0 and `MAX_UUID_BIGINT`");
     this.__uuid__ = t;
   }
@@ -222,7 +222,7 @@ var Kt = or(), Ue = class Ke {
   static fromRandomBytesV4(t) {
     if (t.length !== 16) throw new Error("UUID v4 requires 16 bytes");
     const r = new Uint8Array(t);
-    return r[6] = r[6] & 15 | 64, r[8] = r[8] & 63 | 128, new C(C.bytesToBigInt(r));
+    return r[6] = r[6] & 15 | 64, r[8] = r[8] & 63 | 128, new A(A.bytesToBigInt(r));
   }
   /**
    * Generate a UUID `v7` using a monotonic counter from `0` to `2^31 - 1`,
@@ -274,10 +274,10 @@ var Kt = or(), Ue = class Ke {
       throw new Error("`fromCounterV7` uuid `counter` must be non-negative");
     if (r.__timestamp_micros_since_unix_epoch__ < 0)
       throw new Error("`fromCounterV7` `timestamp` before unix epoch");
-    const s = t.value;
-    t.value = s + 1 & 2147483647;
+    const a = t.value;
+    t.value = a + 1 & 2147483647;
     const u = r.toMillis() & 0xffffffffffffn, o = new Uint8Array(16);
-    return o[0] = Number(u >> 40n & 0xffn), o[1] = Number(u >> 32n & 0xffn), o[2] = Number(u >> 24n & 0xffn), o[3] = Number(u >> 16n & 0xffn), o[4] = Number(u >> 8n & 0xffn), o[5] = Number(u & 0xffn), o[7] = s >>> 23 & 255, o[9] = s >>> 15 & 255, o[10] = s >>> 7 & 255, o[11] = (s & 127) << 1 & 255, o[12] |= n[0] & 127, o[13] = n[1], o[14] = n[2], o[15] = n[3], o[6] = o[6] & 15 | 112, o[8] = o[8] & 63 | 128, new C(C.bytesToBigInt(o));
+    return o[0] = Number(u >> 40n & 0xffn), o[1] = Number(u >> 32n & 0xffn), o[2] = Number(u >> 24n & 0xffn), o[3] = Number(u >> 16n & 0xffn), o[4] = Number(u >> 8n & 0xffn), o[5] = Number(u & 0xffn), o[7] = a >>> 23 & 255, o[9] = a >>> 15 & 255, o[10] = a >>> 7 & 255, o[11] = (a & 127) << 1 & 255, o[12] |= n[0] & 127, o[13] = n[1], o[14] = n[2], o[15] = n[3], o[6] = o[6] & 15 | 112, o[8] = o[8] & 63 | 128, new A(A.bytesToBigInt(o));
   }
   /**
    * Parse a UUID from a string representation.
@@ -298,13 +298,13 @@ var Kt = or(), Ue = class Ke {
     const r = t.replace(/-/g, "");
     if (r.length !== 32) throw new Error("Invalid hex UUID");
     let n = 0n;
-    for (let s = 0; s < 32; s += 2)
-      n = n << 8n | BigInt(parseInt(r.slice(s, s + 2), 16));
-    return new C(n);
+    for (let a = 0; a < 32; a += 2)
+      n = n << 8n | BigInt(parseInt(r.slice(a, a + 2), 16));
+    return new A(n);
   }
   /** Convert to string (hyphenated form). */
   toString() {
-    const r = [...C.bigIntToBytes(this.__uuid__)].map((n) => n.toString(16).padStart(2, "0")).join("");
+    const r = [...A.bigIntToBytes(this.__uuid__)].map((n) => n.toString(16).padStart(2, "0")).join("");
     return r.slice(0, 8) + "-" + r.slice(8, 12) + "-" + r.slice(12, 16) + "-" + r.slice(16, 20) + "-" + r.slice(20);
   }
   /** Convert to bigint (u128). */
@@ -313,7 +313,7 @@ var Kt = or(), Ue = class Ke {
   }
   /** Return a `Uint8Array` of 16 bytes. */
   toBytes() {
-    return C.bigIntToBytes(this.__uuid__);
+    return A.bigIntToBytes(this.__uuid__);
   }
   static bytesToBigInt(t) {
     let r = 0n;
@@ -342,9 +342,9 @@ var Kt = or(), Ue = class Ke {
       case 7:
         return "V7";
       default:
-        if (this == C.NIL)
+        if (this == A.NIL)
           return "Nil";
-        if (this == C.MAX)
+        if (this == A.MAX)
           return "Max";
         throw new Error(`Unsupported UUID version: ${t}`);
     }
@@ -358,8 +358,8 @@ var Kt = or(), Ue = class Ke {
    * @returns 31-bit counter value
    */
   getCounter() {
-    const t = this.toBytes(), r = t[7], n = t[9], s = t[10], u = t[11] >>> 1;
-    return r << 23 | n << 15 | s << 7 | u | 0;
+    const t = this.toBytes(), r = t[7], n = t[9], a = t[10], u = t[11] >>> 1;
+    return r << 23 | n << 15 | a << 7 | u | 0;
   }
   compareTo(t) {
     return this.__uuid__ < t.__uuid__ ? -1 : this.__uuid__ > t.__uuid__ ? 1 : 0;
@@ -444,13 +444,13 @@ var Kt = or(), Ue = class Ke {
   }
   writeU256(e) {
     this.#n(32);
-    const t = BigInt("0xFFFFFFFFFFFFFFFF"), r = e & t, n = e >> BigInt(64) & t, s = e >> BigInt(128) & t, u = e >> BigInt(192);
-    this.#e.setBigUint64(this.#t + 0, r, !0), this.#e.setBigUint64(this.#t + 8, n, !0), this.#e.setBigUint64(this.#t + 16, s, !0), this.#e.setBigUint64(this.#t + 24, u, !0), this.#t += 32;
+    const t = BigInt("0xFFFFFFFFFFFFFFFF"), r = e & t, n = e >> BigInt(64) & t, a = e >> BigInt(128) & t, u = e >> BigInt(192);
+    this.#e.setBigUint64(this.#t + 0, r, !0), this.#e.setBigUint64(this.#t + 8, n, !0), this.#e.setBigUint64(this.#t + 16, a, !0), this.#e.setBigUint64(this.#t + 24, u, !0), this.#t += 32;
   }
   writeI256(e) {
     this.#n(32);
-    const t = BigInt("0xFFFFFFFFFFFFFFFF"), r = e & t, n = e >> BigInt(64) & t, s = e >> BigInt(128) & t, u = e >> BigInt(192);
-    this.#e.setBigUint64(this.#t + 0, r, !0), this.#e.setBigUint64(this.#t + 8, n, !0), this.#e.setBigUint64(this.#t + 16, s, !0), this.#e.setBigInt64(this.#t + 24, u, !0), this.#t += 32;
+    const t = BigInt("0xFFFFFFFFFFFFFFFF"), r = e & t, n = e >> BigInt(64) & t, a = e >> BigInt(128) & t, u = e >> BigInt(192);
+    this.#e.setBigUint64(this.#t + 0, r, !0), this.#e.setBigUint64(this.#t + 8, n, !0), this.#e.setBigUint64(this.#t + 16, a, !0), this.#e.setBigInt64(this.#t + 24, u, !0), this.#t += 32;
   }
   writeF32(e) {
     this.#n(4), this.#e.setFloat32(this.#t, e, !0), this.#t += 4;
@@ -575,18 +575,18 @@ var Kt = or(), Ue = class Ke {
     return new TextDecoder("utf-8").decode(e);
   }
 };
-function Re(e) {
+function De(e) {
   const t = e.replace(/([-_][a-z])/gi, (r) => r.toUpperCase().replace("-", "").replace("_", ""));
   return t.charAt(0).toUpperCase() + t.slice(1);
 }
-function qe(e, t) {
+function Ee(e, t) {
   if (e === t) return !0;
   if (typeof e != "object" || e === null || typeof t != "object" || t === null)
     return !1;
   const r = Object.keys(e), n = Object.keys(t);
   if (r.length !== n.length) return !1;
-  for (const s of r)
-    if (!n.includes(s) || !qe(e[s], t[s]))
+  for (const a of r)
+    if (!n.includes(a) || !Ee(e[a], t[a]))
       return !1;
   return !0;
 }
@@ -630,25 +630,25 @@ function Ht(e) {
 function pr(e) {
   return $t(Ht(e));
 }
-function Ee(e) {
+function ke(e) {
   return e.replace(/[-_]+/g, "_").replace(/_([a-zA-Z0-9])/g, (t, r) => r.toUpperCase());
 }
-function ke(e, t) {
+function Pe(e, t) {
   for (; t.tag === "Ref"; ) t = e.types[t.value];
   if (t.tag === "Product") {
     let n = 0;
-    for (const { algebraicType: s } of t.value.elements)
-      n += ke(e, s);
+    for (const { algebraicType: a } of t.value.elements)
+      n += Pe(e, a);
     return n;
   } else if (t.tag === "Sum") {
     let n = 1 / 0;
-    for (const { algebraicType: s } of t.value.variants) {
-      const u = ke(e, s);
+    for (const { algebraicType: a } of t.value.variants) {
+      const u = Pe(e, a);
       u < n && (n = u);
     }
     return n === 1 / 0 && (n = 0), 4 + n;
   } else if (t.tag == "Array")
-    return 4 + 4 * ke(e, t.value);
+    return 4 + 4 * Pe(e, t.value);
   return {
     String: 8,
     Sum: 1,
@@ -774,10 +774,10 @@ var ht = class Ze {
         if (t.value.tag === "U8")
           e.writeUInt8Array(r);
         else {
-          const s = t.value;
+          const a = t.value;
           e.writeU32(r.length);
           for (const u of r)
-            h.serializeValue(e, s, u, n);
+            h.serializeValue(e, a, u, n);
         }
         break;
       case "Bool":
@@ -845,8 +845,8 @@ var ht = class Ze {
         if (t.value.tag === "U8")
           return e.readUInt8Array();
         {
-          const n = t.value, s = e.readU32(), u = [];
-          for (let o = 0; o < s; o++)
+          const n = t.value, a = e.readU32(), u = [];
+          for (let o = 0; o < a; o++)
             u.push(
               h.deserializeValue(e, n, r)
             );
@@ -922,11 +922,11 @@ var ht = class Ze {
   }
 }, Z = {
   serializeValue(e, t, r, n) {
-    for (const s of t.elements)
+    for (const a of t.elements)
       h.serializeValue(
         e,
-        s.algebraicType,
-        r[s.name],
+        a.algebraicType,
+        r[a.name],
         n
       );
   },
@@ -934,20 +934,20 @@ var ht = class Ze {
     const n = {};
     if (t.elements.length === 1) {
       if (t.elements[0].name === "__time_duration_micros__")
-        return new Ue(e.readI64());
+        return new Te(e.readI64());
       if (t.elements[0].name === "__timestamp_micros_since_unix_epoch__")
-        return new Pe(e.readI64());
+        return new Re(e.readI64());
       if (t.elements[0].name === "__identity__")
         return new ht(e.readU256());
       if (t.elements[0].name === "__connection_id__")
-        return new De(e.readU128());
+        return new Ve(e.readU128());
       if (t.elements[0].name === "__uuid__")
         return new jt(e.readU128());
     }
-    for (const s of t.elements)
-      n[s.name] = h.deserializeValue(
+    for (const a of t.elements)
+      n[a.name] = h.deserializeValue(
         e,
-        s.algebraicType,
+        a.algebraicType,
         r
       );
     return n;
@@ -978,9 +978,9 @@ var ht = class Ze {
         n
       )) : e.writeByte(1);
     else if (t.variants.length == 2 && t.variants[0].name === "ok" && t.variants[1].name === "err") {
-      let s, u, o;
-      if ("ok" in r ? (s = "ok", u = r.ok, o = 0) : (s = "err", u = r.err, o = 1), o < 0)
-        throw `Result serialization error: variant '${s}' not found in ${JSON.stringify(t)}`;
+      let a, u, o;
+      if ("ok" in r ? (a = "ok", u = r.ok, o = 0) : (a = "err", u = r.err, o = 1), o < 0)
+        throw `Result serialization error: variant '${a}' not found in ${JSON.stringify(t)}`;
       e.writeU8(o), h.serializeValue(
         e,
         t.variants[o].algebraicType,
@@ -988,7 +988,7 @@ var ht = class Ze {
         n
       );
     } else {
-      const s = r.tag, u = t.variants.findIndex((o) => o.name === s);
+      const a = r.tag, u = t.variants.findIndex((o) => o.name === a);
       if (u < 0)
         throw `Can't serialize a sum type, couldn't find ${r.tag} tag ${JSON.stringify(r)} in variants ${JSON.stringify(t)}`;
       e.writeU8(u), h.serializeValue(
@@ -1026,15 +1026,15 @@ var ht = class Ze {
         ) };
       throw `Can't deserialize a result type, couldn't find ${n} tag`;
     } else {
-      const s = t.variants[n], u = h.deserializeValue(
+      const a = t.variants[n], u = h.deserializeValue(
         e,
-        s.algebraicType,
+        a.algebraicType,
         r
       );
-      return { tag: s.name, value: u };
+      return { tag: a.name, value: u };
     }
   }
-}, De = class je {
+}, Ve = class $e {
   __connection_id__;
   /**
    * Creates a new `ConnectionId`.
@@ -1066,7 +1066,7 @@ var ht = class Ze {
     let r = BigInt(0);
     for (let n = 0; n < 16; n++)
       r = r << BigInt(8) | BigInt(t());
-    return new je(r);
+    return new $e(r);
   }
   /**
    * Compare two connection IDs for equality.
@@ -1096,10 +1096,10 @@ var ht = class Ze {
    * Parse a connection ID from a hexadecimal string.
    */
   static fromString(t) {
-    return new je(dr(t));
+    return new $e(dr(t));
   }
   static fromStringOrNull(t) {
-    const r = je.fromString(t);
+    const r = $e.fromString(t);
     return r.isZero() ? null : r;
   }
 }, fr = {
@@ -1114,9 +1114,9 @@ var ht = class Ze {
       variants: [
         {
           name: "Interval",
-          algebraicType: Ue.getAlgebraicType()
+          algebraicType: Te.getAlgebraicType()
         },
-        { name: "Time", algebraicType: Pe.getAlgebraicType() }
+        { name: "Time", algebraicType: Re.getAlgebraicType() }
       ]
     });
   },
@@ -1126,15 +1126,15 @@ var ht = class Ze {
     const t = e.value.variants;
     if (t.length !== 2)
       return !1;
-    const r = t.find((s) => s.name === "Interval"), n = t.find((s) => s.name === "Time");
-    return !r || !n ? !1 : Ue.isTimeDuration(r.algebraicType) && Pe.isTimestamp(n.algebraicType);
+    const r = t.find((a) => a.name === "Interval"), n = t.find((a) => a.name === "Time");
+    return !r || !n ? !1 : Te.isTimeDuration(r.algebraicType) && Re.isTimestamp(n.algebraicType);
   }
 }, yr = (e) => ({
   tag: "Interval",
-  value: new Ue(e)
+  value: new Te(e)
 }), gr = (e) => ({
   tag: "Time",
-  value: new Pe(e)
+  value: new Re(e)
 }), Wt = fr, br = {
   getAlgebraicType(e) {
     return h.Sum({
@@ -1179,8 +1179,8 @@ var It = class Qt {
     );
   }
   toSql() {
-    const t = this.filterQuery, r = this.sourceQuery, n = Ve(t.table.name), s = Ve(r.table.name);
-    let u = `SELECT ${s}.* FROM ${n} JOIN ${s} ON ${X(this.joinCondition)}`;
+    const t = this.filterQuery, r = this.sourceQuery, n = Oe(t.table.name), a = Oe(r.table.name);
+    let u = `SELECT ${a}.* FROM ${n} JOIN ${a} ON ${X(this.joinCondition)}`;
     const o = [];
     if (t.whereClause && o.push(X(t.whereClause)), r.whereClause && o.push(X(r.whereClause)), o.length > 0) {
       const l = o.length === 1 ? o[0] : o.map(Fe).join(" AND ");
@@ -1188,31 +1188,31 @@ var It = class Qt {
     }
     return u;
   }
-}, _r = class $e {
+}, _r = class ze {
   constructor(t, r) {
     this.table = t, this.whereClause = r;
   }
   [mt] = !0;
   where(t) {
     const r = t(this.table.cols), n = this.whereClause ? Mr(this.whereClause, r) : r;
-    return new $e(this.table, n);
+    return new ze(this.table, n);
   }
   rightSemijoin(t, r) {
-    const n = new $e(t), s = r(
+    const n = new ze(t), a = r(
       this.table.indexedCols,
       t.indexedCols
     );
-    return new It(n, this, s);
+    return new It(n, this, a);
   }
   leftSemijoin(t, r) {
-    const n = new $e(t), s = r(
+    const n = new ze(t), a = r(
       this.table.indexedCols,
       t.indexedCols
     );
-    return new It(this, n, s);
+    return new It(this, n, a);
   }
   toSql() {
-    return Cr(this.table, this.whereClause);
+    return Sr(this.table, this.whereClause);
   }
   build() {
     return this;
@@ -1261,22 +1261,22 @@ function Tr(e) {
 function xr(e) {
   const t = {};
   for (const r of Object.keys(e.columns)) {
-    const n = e.columns[r], s = new Sr(
+    const n = e.columns[r], a = new Ar(
       e.name,
       r,
       n.typeBuilder.algebraicType
     );
-    t[r] = Object.freeze(s);
+    t[r] = Object.freeze(a);
   }
   return Object.freeze(t);
 }
-function Cr(e, t, r = []) {
-  const s = `SELECT * FROM ${Ve(e.name)}`, u = [];
-  if (t && u.push(X(t)), u.push(...r), u.length === 0) return s;
+function Sr(e, t, r = []) {
+  const a = `SELECT * FROM ${Oe(e.name)}`, u = [];
+  if (t && u.push(X(t)), u.push(...r), u.length === 0) return a;
   const o = u.length === 1 ? u[0] : u.map(Fe).join(" AND ");
-  return `${s} WHERE ${o}`;
+  return `${a} WHERE ${o}`;
 }
-var Sr = class {
+var Ar = class {
   type = "column";
   column;
   table;
@@ -1291,7 +1291,7 @@ var Sr = class {
     return {
       type: "eq",
       left: this,
-      right: Ce(e)
+      right: Ae(e)
     };
   }
   // These types could be tighted, but since we declare the overloads above, it doesn't weaken the API surface.
@@ -1299,7 +1299,7 @@ var Sr = class {
     return {
       type: "lt",
       left: this,
-      right: Ce(e)
+      right: Ae(e)
     };
   }
   // These types could be tighted, but since we declare the overloads above, it doesn't weaken the API surface.
@@ -1307,7 +1307,7 @@ var Sr = class {
     return {
       type: "lte",
       left: this,
-      right: Ce(e)
+      right: Ae(e)
     };
   }
   // These types could be tighted, but since we declare the overloads above, it doesn't weaken the API surface.
@@ -1315,7 +1315,7 @@ var Sr = class {
     return {
       type: "gt",
       left: this,
-      right: Ce(e)
+      right: Ae(e)
     };
   }
   // These types could be tighted, but since we declare the overloads above, it doesn't weaken the API surface.
@@ -1323,15 +1323,15 @@ var Sr = class {
     return {
       type: "gte",
       left: this,
-      right: Ce(e)
+      right: Ae(e)
     };
   }
 };
-function Ar(e) {
+function Cr(e) {
   return { type: "literal", value: e };
 }
-function Ce(e) {
-  return e.type === "literal" || typeof e == "object" && e != null && "type" in e && e.type === "column" ? e : Ar(e);
+function Ae(e) {
+  return e.type === "literal" || typeof e == "object" && e != null && "type" in e && e.type === "column" ? e : Cr(e);
 }
 function Mr(...e) {
   return { type: "and", clauses: e };
@@ -1339,17 +1339,17 @@ function Mr(...e) {
 function X(e, t) {
   switch (e.type) {
     case "eq":
-      return `${M(e.left)} = ${M(e.right)}`;
+      return `${q(e.left)} = ${q(e.right)}`;
     case "ne":
-      return `${M(e.left)} <> ${M(e.right)}`;
+      return `${q(e.left)} <> ${q(e.right)}`;
     case "gt":
-      return `${M(e.left)} > ${M(e.right)}`;
+      return `${q(e.left)} > ${q(e.right)}`;
     case "gte":
-      return `${M(e.left)} >= ${M(e.right)}`;
+      return `${q(e.left)} >= ${q(e.right)}`;
     case "lt":
-      return `${M(e.left)} < ${M(e.right)}`;
+      return `${q(e.left)} < ${q(e.right)}`;
     case "lte":
-      return `${M(e.left)} <= ${M(e.right)}`;
+      return `${q(e.left)} <= ${q(e.right)}`;
     case "and":
       return e.clauses.map((r) => X(r)).map(Fe).join(" AND ");
     case "or":
@@ -1361,16 +1361,16 @@ function X(e, t) {
 function Fe(e) {
   return `(${e})`;
 }
-function M(e, t) {
+function q(e, t) {
   if (Er(e))
     return qr(e.value);
   const r = e.table;
-  return `${Ve(r)}.${Ve(e.column)}`;
+  return `${Oe(r)}.${Oe(e.column)}`;
 }
 function qr(e) {
   if (e == null)
     return "NULL";
-  if (e instanceof ht || e instanceof De)
+  if (e instanceof ht || e instanceof Ve)
     return `0x${e.toHexString()}`;
   switch (typeof e) {
     case "number":
@@ -1384,7 +1384,7 @@ function qr(e) {
       return `'${JSON.stringify(e).replace(/'/g, "''")}'`;
   }
 }
-function Ve(e) {
+function Oe(e) {
   return `"${e.replace(/"/g, '""')}"`;
 }
 function Er(e) {
@@ -1413,7 +1413,7 @@ var _ = class {
     this.algebraicType = e;
   }
   optional() {
-    return new ze(this);
+    return new Le(this);
   }
   serialize(e, t) {
     h.serializeValue(e, this.algebraicType, t);
@@ -1455,7 +1455,7 @@ var _ = class {
   name(e) {
     return new Y(this, i(c, { name: e }));
   }
-}, Fr = class extends _ {
+}, Pr = class extends _ {
   constructor() {
     super(h.U16);
   }
@@ -1489,7 +1489,7 @@ var _ = class {
   name(e) {
     return new ee(this, i(c, { name: e }));
   }
-}, Pr = class extends _ {
+}, Fr = class extends _ {
   constructor() {
     super(h.U32);
   }
@@ -1872,62 +1872,62 @@ var _ = class {
     super(h.Bool);
   }
   index(e = "btree") {
-    return new Se(
+    return new Ce(
       this,
       i(c, { indexType: e })
     );
   }
   unique() {
-    return new Se(
+    return new Ce(
       this,
       i(c, { isUnique: !0 })
     );
   }
   primaryKey() {
-    return new Se(
+    return new Ce(
       this,
       i(c, { isPrimaryKey: !0 })
     );
   }
   default(e) {
-    return new Se(
+    return new Ce(
       this,
       i(c, { defaultValue: e })
     );
   }
   name(e) {
-    return new Se(this, i(c, { name: e }));
+    return new Ce(this, i(c, { name: e }));
   }
 }, Wr = class extends _ {
   constructor() {
     super(h.String);
   }
   index(e = "btree") {
-    return new Ae(
+    return new Me(
       this,
       i(c, { indexType: e })
     );
   }
   unique() {
-    return new Ae(
+    return new Me(
       this,
       i(c, { isUnique: !0 })
     );
   }
   primaryKey() {
-    return new Ae(
+    return new Me(
       this,
       i(c, { isPrimaryKey: !0 })
     );
   }
   default(e) {
-    return new Ae(
+    return new Me(
       this,
       i(c, { defaultValue: e })
     );
   }
   name(e) {
-    return new Ae(this, i(c, { name: e }));
+    return new Me(this, i(c, { name: e }));
   }
 }, Ge = class extends _ {
   element;
@@ -1955,32 +1955,32 @@ var _ = class {
   name(e) {
     return new xt(i(c, { name: e }));
   }
-}, ze = class extends _ {
+}, Le = class extends _ {
   value;
   constructor(e) {
     super(br.getAlgebraicType(e.algebraicType)), this.value = e;
   }
   default(e) {
-    return new Ct(
+    return new St(
       this,
       i(c, { defaultValue: e })
     );
   }
   name(e) {
-    return new Ct(this, i(c, { name: e }));
+    return new St(this, i(c, { name: e }));
   }
-}, Te = class extends _ {
+}, xe = class extends _ {
   typeName;
   elements;
   constructor(e, t) {
     function r(n) {
-      return Object.keys(n).map((s) => ({
-        name: s,
+      return Object.keys(n).map((a) => ({
+        name: a,
         // Lazily resolve the underlying object's algebraicType.
         // This will call obj[key].algebraicType only when someone
         // actually reads this property.
         get algebraicType() {
-          return n[s].algebraicType;
+          return n[a].algebraicType;
         }
       }));
     }
@@ -1991,13 +1991,13 @@ var _ = class {
     ), this.typeName = t, this.elements = e;
   }
   default(e) {
-    return new St(
+    return new At(
       this,
       i(c, { defaultValue: e })
     );
   }
   name(e) {
-    return new St(this, i(c, { name: e }));
+    return new At(this, i(c, { name: e }));
   }
 }, Xe = class extends _ {
   ok;
@@ -2012,19 +2012,19 @@ var _ = class {
   constructor() {
     super({ tag: "Product", value: { elements: [] } });
   }
-}, E = class extends _ {
+}, k = class extends _ {
   row;
   typeName;
   constructor(e, t) {
     const r = Object.fromEntries(
-      Object.entries(e).map(([s, u]) => [
-        s,
+      Object.entries(e).map(([a, u]) => [
+        a,
         u instanceof B ? u : new B(u, {})
       ])
-    ), n = Object.keys(r).map((s) => ({
-      name: s,
+    ), n = Object.keys(r).map((a) => ({
+      name: a,
       get algebraicType() {
-        return r[s].typeBuilder.algebraicType;
+        return r[a].typeBuilder.algebraicType;
       }
     }));
     super(h.Product({ elements: n })), this.row = r, this.typeName = t;
@@ -2034,13 +2034,13 @@ var _ = class {
   typeName;
   constructor(e, t) {
     function r(n) {
-      return Object.keys(n).map((s) => ({
-        name: s,
+      return Object.keys(n).map((a) => ({
+        name: a,
         // Lazily resolve the underlying object's algebraicType.
         // This will call obj[key].algebraicType only when someone
         // actually reads this property.
         get algebraicType() {
-          return n[s].algebraicType;
+          return n[a].algebraicType;
         }
       }));
     }
@@ -2050,7 +2050,7 @@ var _ = class {
       })
     ), this.variants = e, this.typeName = t;
     for (const n of Object.keys(e)) {
-      const s = Object.getOwnPropertyDescriptor(e, n), u = !!s && (typeof s.get == "function" || typeof s.set == "function");
+      const a = Object.getOwnPropertyDescriptor(e, n), u = !!a && (typeof a.get == "function" || typeof a.set == "function");
       let o = !1;
       if (u || (o = e[n] instanceof pt), o) {
         const l = this.create(n);
@@ -2083,13 +2083,13 @@ var _ = class {
   }
 }, ft = Jt, Jr = class extends Jt {
   index(e = "btree") {
-    return new At(
+    return new Ct(
       this,
       i(c, { indexType: e })
     );
   }
   primaryKey() {
-    return new At(
+    return new Ct(
       this,
       i(c, { isPrimaryKey: !0 })
     );
@@ -2146,7 +2146,7 @@ var _ = class {
   }
 }, Xr = class extends _ {
   constructor() {
-    super(De.getAlgebraicType());
+    super(Ve.getAlgebraicType());
   }
   index(e = "btree") {
     return new he(
@@ -2183,7 +2183,7 @@ var _ = class {
   }
 }, Yr = class extends _ {
   constructor() {
-    super(Pe.getAlgebraicType());
+    super(Re.getAlgebraicType());
   }
   index(e = "btree") {
     return new me(
@@ -2220,7 +2220,7 @@ var _ = class {
   }
 }, en = class extends _ {
   constructor() {
-    super(Ue.getAlgebraicType());
+    super(Te.getAlgebraicType());
   }
   index(e = "btree") {
     return new pe(
@@ -2805,27 +2805,27 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, Se = class ge extends B {
+}, Ce = class be extends B {
   index(t = "btree") {
-    return new ge(
+    return new be(
       this.typeBuilder,
       i(this.columnMetadata, { indexType: t })
     );
   }
   unique() {
-    return new ge(
+    return new be(
       this.typeBuilder,
       i(this.columnMetadata, { isUnique: !0 })
     );
   }
   primaryKey() {
-    return new ge(
+    return new be(
       this.typeBuilder,
       i(this.columnMetadata, { isPrimaryKey: !0 })
     );
   }
   default(t) {
-    return new ge(
+    return new be(
       this.typeBuilder,
       i(this.columnMetadata, {
         defaultValue: t
@@ -2833,32 +2833,32 @@ var _ = class {
     );
   }
   name(t) {
-    return new ge(
+    return new be(
       this.typeBuilder,
       i(this.columnMetadata, { name: t })
     );
   }
-}, Ae = class be extends B {
+}, Me = class we extends B {
   index(t = "btree") {
-    return new be(
+    return new we(
       this.typeBuilder,
       i(this.columnMetadata, { indexType: t })
     );
   }
   unique() {
-    return new be(
+    return new we(
       this.typeBuilder,
       i(this.columnMetadata, { isUnique: !0 })
     );
   }
   primaryKey() {
-    return new be(
+    return new we(
       this.typeBuilder,
       i(this.columnMetadata, { isPrimaryKey: !0 })
     );
   }
   default(t) {
-    return new be(
+    return new we(
       this.typeBuilder,
       i(this.columnMetadata, {
         defaultValue: t
@@ -2866,7 +2866,7 @@ var _ = class {
     );
   }
   name(t) {
-    return new be(
+    return new we(
       this.typeBuilder,
       i(this.columnMetadata, { name: t })
     );
@@ -2898,7 +2898,7 @@ var _ = class {
   name(t) {
     return new rt(i(this.columnMetadata, { name: t }));
   }
-}, Ct = class nt extends B {
+}, St = class nt extends B {
   default(t) {
     return new nt(
       this.typeBuilder,
@@ -2925,7 +2925,7 @@ var _ = class {
       })
     );
   }
-}, St = class it extends B {
+}, At = class it extends B {
   default(t) {
     return new it(
       this.typeBuilder,
@@ -2951,7 +2951,7 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, At = class ut extends st {
+}, Ct = class ut extends st {
   index(t = "btree") {
     return new ut(
       this.typeBuilder,
@@ -2977,38 +2977,7 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, de = class we extends B {
-  index(t = "btree") {
-    return new we(
-      this.typeBuilder,
-      i(this.columnMetadata, { indexType: t })
-    );
-  }
-  unique() {
-    return new we(
-      this.typeBuilder,
-      i(this.columnMetadata, { isUnique: !0 })
-    );
-  }
-  primaryKey() {
-    return new we(
-      this.typeBuilder,
-      i(this.columnMetadata, { isPrimaryKey: !0 })
-    );
-  }
-  default(t) {
-    return new we(
-      this.typeBuilder,
-      i(this.columnMetadata, { defaultValue: t })
-    );
-  }
-  name(t) {
-    return new we(
-      this.typeBuilder,
-      i(this.columnMetadata, { name: t })
-    );
-  }
-}, he = class ve extends B {
+}, de = class ve extends B {
   index(t = "btree") {
     return new ve(
       this.typeBuilder,
@@ -3039,7 +3008,7 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, me = class Ie extends B {
+}, he = class Ie extends B {
   index(t = "btree") {
     return new Ie(
       this.typeBuilder,
@@ -3070,7 +3039,7 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, pe = class _e extends B {
+}, me = class _e extends B {
   index(t = "btree") {
     return new _e(
       this.typeBuilder,
@@ -3101,7 +3070,7 @@ var _ = class {
       i(this.columnMetadata, { name: t })
     );
   }
-}, fe = class Be extends B {
+}, pe = class Be extends B {
   index(t = "btree") {
     return new Be(
       this.typeBuilder,
@@ -3128,6 +3097,37 @@ var _ = class {
   }
   name(t) {
     return new Be(
+      this.typeBuilder,
+      i(this.columnMetadata, { name: t })
+    );
+  }
+}, fe = class Ue extends B {
+  index(t = "btree") {
+    return new Ue(
+      this.typeBuilder,
+      i(this.columnMetadata, { indexType: t })
+    );
+  }
+  unique() {
+    return new Ue(
+      this.typeBuilder,
+      i(this.columnMetadata, { isUnique: !0 })
+    );
+  }
+  primaryKey() {
+    return new Ue(
+      this.typeBuilder,
+      i(this.columnMetadata, { isPrimaryKey: !0 })
+    );
+  }
+  default(t) {
+    return new Ue(
+      this.typeBuilder,
+      i(this.columnMetadata, { defaultValue: t })
+    );
+  }
+  name(t) {
+    return new Ue(
       this.typeBuilder,
       i(this.columnMetadata, { name: t })
     );
@@ -3149,13 +3149,13 @@ var _ = class {
     r = t, n = e;
   }
   if (Array.isArray(r)) {
-    const s = {};
+    const a = {};
     for (const u of r)
-      s[u] = new pt();
-    return new Jr(s, n);
+      a[u] = new pt();
+    return new Jr(a, n);
   }
   return new ft(r, n);
-}), a = {
+}), s = {
   /**
    * Creates a new `Bool` {@link AlgebraicType} to be used in table definitions
    * Represented as `boolean` in TypeScript.
@@ -3197,7 +3197,7 @@ var _ = class {
    * Represented as `number` in TypeScript.
    * @returns A new {@link U16Builder} instance
    */
-  u16: () => new Fr(),
+  u16: () => new Pr(),
   /**
    * Creates a new `I32` {@link AlgebraicType} to be used in table definitions
    * Represented as `number` in TypeScript.
@@ -3209,7 +3209,7 @@ var _ = class {
    * Represented as `number` in TypeScript.
    * @returns A new {@link U32Builder} instance
    */
-  u32: () => new Pr(),
+  u32: () => new Fr(),
   /**
    * Creates a new `I64` {@link AlgebraicType} to be used in table definitions
    * Represented as `bigint` in TypeScript.
@@ -3275,9 +3275,9 @@ var _ = class {
         throw new TypeError(
           "When providing a name, you must also provide the object."
         );
-      return new Te(t, e);
+      return new xe(t, e);
     }
-    return new Te(e, void 0);
+    return new xe(e, void 0);
   }),
   /**
    * Creates a new `Row` {@link AlgebraicType} to be used in table definitions. Row types in SpacetimeDB
@@ -3297,7 +3297,7 @@ var _ = class {
    */
   row: ((e, t) => {
     const [r, n] = typeof e == "string" ? [t, e] : [e, void 0];
-    return new E(r, n);
+    return new k(r, n);
   }),
   /**
    * Creates a new `Array` {@link AlgebraicType} to be used in table definitions.
@@ -3327,20 +3327,20 @@ var _ = class {
     let t = null;
     const r = () => t ??= e();
     return new Proxy({}, {
-      get(s, u, o) {
+      get(a, u, o) {
         const l = r(), d = Reflect.get(l, u, o);
         return typeof d == "function" ? d.bind(l) : d;
       },
-      set(s, u, o, l) {
+      set(a, u, o, l) {
         return Reflect.set(r(), u, o, l);
       },
-      has(s, u) {
+      has(a, u) {
         return u in r();
       },
       ownKeys() {
         return Reflect.ownKeys(r());
       },
-      getOwnPropertyDescriptor(s, u) {
+      getOwnPropertyDescriptor(a, u) {
         return Object.getOwnPropertyDescriptor(r(), u);
       },
       getPrototypeOf() {
@@ -3360,7 +3360,7 @@ var _ = class {
    * @returns A new {@link OptionBuilder} instance with the {@link Option} type.
    */
   option(e) {
-    return new ze(e);
+    return new Le(e);
   },
   /**
    * This is a convenience method for creating a column with the {@link Result} type.
@@ -3409,55 +3409,55 @@ var _ = class {
    * @returns A new {@link ByteArrayBuilder} instance with the {@link ByteArray} type.
    */
   byteArray: () => new Qr()
-}, an = a.enum("RowSizeHint", {
-  FixedSize: a.u16(),
-  RowOffsets: a.array(a.u64())
-}), un = an, ct = a.object("BsatnRowList", {
+}, an = s.enum("RowSizeHint", {
+  FixedSize: s.u16(),
+  RowOffsets: s.array(s.u64())
+}), un = an, ct = s.object("BsatnRowList", {
   get sizeHint() {
     return un;
   },
-  rowsData: a.byteArray()
-}), on = a.object("CallReducer", {
-  reducer: a.string(),
-  args: a.byteArray(),
-  requestId: a.u32(),
-  flags: a.u8()
-}), cn = a.object("Subscribe", {
-  queryStrings: a.array(a.string()),
-  requestId: a.u32()
-}), ln = a.object("OneOffQuery", {
-  messageId: a.byteArray(),
-  queryString: a.string()
-}), R = a.object("QueryId", {
-  id: a.u32()
-}), dn = a.object("SubscribeSingle", {
-  query: a.string(),
-  requestId: a.u32(),
+  rowsData: s.byteArray()
+}), on = s.object("CallReducer", {
+  reducer: s.string(),
+  args: s.byteArray(),
+  requestId: s.u32(),
+  flags: s.u8()
+}), cn = s.object("Subscribe", {
+  queryStrings: s.array(s.string()),
+  requestId: s.u32()
+}), ln = s.object("OneOffQuery", {
+  messageId: s.byteArray(),
+  queryString: s.string()
+}), R = s.object("QueryId", {
+  id: s.u32()
+}), dn = s.object("SubscribeSingle", {
+  query: s.string(),
+  requestId: s.u32(),
   get queryId() {
     return R;
   }
-}), hn = a.object("SubscribeMulti", {
-  queryStrings: a.array(a.string()),
-  requestId: a.u32(),
+}), hn = s.object("SubscribeMulti", {
+  queryStrings: s.array(s.string()),
+  requestId: s.u32(),
   get queryId() {
     return R;
   }
-}), mn = a.object("Unsubscribe", {
-  requestId: a.u32(),
+}), mn = s.object("Unsubscribe", {
+  requestId: s.u32(),
   get queryId() {
     return R;
   }
-}), pn = a.object("UnsubscribeMulti", {
-  requestId: a.u32(),
+}), pn = s.object("UnsubscribeMulti", {
+  requestId: s.u32(),
   get queryId() {
     return R;
   }
-}), fn = a.object("CallProcedure", {
-  procedure: a.string(),
-  args: a.byteArray(),
-  requestId: a.u32(),
-  flags: a.u8()
-}), yn = a.enum("ClientMessage", {
+}), fn = s.object("CallProcedure", {
+  procedure: s.string(),
+  args: s.byteArray(),
+  requestId: s.u32(),
+  flags: s.u8()
+}), yn = s.enum("ClientMessage", {
   get CallReducer() {
     return on;
   },
@@ -3482,144 +3482,144 @@ var _ = class {
   get CallProcedure() {
     return fn;
   }
-}), Me = yn, Gt = a.object("QueryUpdate", {
+}), qe = yn, Gt = s.object("QueryUpdate", {
   get deletes() {
     return ct;
   },
   get inserts() {
     return ct;
   }
-}), gn = a.enum("CompressableQueryUpdate", {
+}), gn = s.enum("CompressableQueryUpdate", {
   get Uncompressed() {
     return Gt;
   },
-  Brotli: a.byteArray(),
-  Gzip: a.byteArray()
-}), bn = gn, Xt = a.object("TableUpdate", {
-  tableId: a.u32(),
-  tableName: a.string(),
-  numRows: a.u64(),
+  Brotli: s.byteArray(),
+  Gzip: s.byteArray()
+}), bn = gn, Xt = s.object("TableUpdate", {
+  tableId: s.u32(),
+  tableName: s.string(),
+  numRows: s.u64(),
   get updates() {
-    return a.array(bn);
+    return s.array(bn);
   }
-}), Oe = a.object("DatabaseUpdate", {
+}), Ne = s.object("DatabaseUpdate", {
   get tables() {
-    return a.array(Xt);
+    return s.array(Xt);
   }
-}), wn = a.object("InitialSubscription", {
+}), wn = s.object("InitialSubscription", {
   get databaseUpdate() {
-    return Oe;
+    return Ne;
   },
-  requestId: a.u32(),
-  totalHostExecutionDuration: a.timeDuration()
-}), vn = a.enum("UpdateStatus", {
+  requestId: s.u32(),
+  totalHostExecutionDuration: s.timeDuration()
+}), vn = s.enum("UpdateStatus", {
   get Committed() {
-    return Oe;
+    return Ne;
   },
-  Failed: a.string(),
-  OutOfEnergy: a.unit()
-}), In = vn, _n = a.object("ReducerCallInfo", {
-  reducerName: a.string(),
-  reducerId: a.u32(),
-  args: a.byteArray(),
-  requestId: a.u32()
-}), Bn = a.object("EnergyQuanta", {
-  quanta: a.u128()
-}), Un = a.object("TransactionUpdate", {
+  Failed: s.string(),
+  OutOfEnergy: s.unit()
+}), In = vn, _n = s.object("ReducerCallInfo", {
+  reducerName: s.string(),
+  reducerId: s.u32(),
+  args: s.byteArray(),
+  requestId: s.u32()
+}), Bn = s.object("EnergyQuanta", {
+  quanta: s.u128()
+}), Un = s.object("TransactionUpdate", {
   get status() {
     return In;
   },
-  timestamp: a.timestamp(),
-  callerIdentity: a.identity(),
-  callerConnectionId: a.connectionId(),
+  timestamp: s.timestamp(),
+  callerIdentity: s.identity(),
+  callerConnectionId: s.connectionId(),
   get reducerCall() {
     return _n;
   },
   get energyQuantaUsed() {
     return Bn;
   },
-  totalHostExecutionDuration: a.timeDuration()
-}), Tn = a.object("TransactionUpdateLight", {
-  requestId: a.u32(),
+  totalHostExecutionDuration: s.timeDuration()
+}), Tn = s.object("TransactionUpdateLight", {
+  requestId: s.u32(),
   get update() {
-    return Oe;
+    return Ne;
   }
-}), xn = a.object("IdentityToken", {
-  identity: a.identity(),
-  token: a.string(),
-  connectionId: a.connectionId()
-}), Cn = a.object("OneOffTable", {
-  tableName: a.string(),
+}), xn = s.object("IdentityToken", {
+  identity: s.identity(),
+  token: s.string(),
+  connectionId: s.connectionId()
+}), Sn = s.object("OneOffTable", {
+  tableName: s.string(),
   get rows() {
     return ct;
   }
-}), Sn = a.object("OneOffQueryResponse", {
-  messageId: a.byteArray(),
-  error: a.option(a.string()),
+}), An = s.object("OneOffQueryResponse", {
+  messageId: s.byteArray(),
+  error: s.option(s.string()),
   get tables() {
-    return a.array(Cn);
+    return s.array(Sn);
   },
-  totalHostExecutionDuration: a.timeDuration()
-}), Yt = a.object("SubscribeRows", {
-  tableId: a.u32(),
-  tableName: a.string(),
+  totalHostExecutionDuration: s.timeDuration()
+}), Yt = s.object("SubscribeRows", {
+  tableId: s.u32(),
+  tableName: s.string(),
   get tableRows() {
     return Xt;
   }
-}), An = a.object("SubscribeApplied", {
-  requestId: a.u32(),
-  totalHostExecutionDurationMicros: a.u64(),
+}), Cn = s.object("SubscribeApplied", {
+  requestId: s.u32(),
+  totalHostExecutionDurationMicros: s.u64(),
   get queryId() {
     return R;
   },
   get rows() {
     return Yt;
   }
-}), Mn = a.object("UnsubscribeApplied", {
-  requestId: a.u32(),
-  totalHostExecutionDurationMicros: a.u64(),
+}), Mn = s.object("UnsubscribeApplied", {
+  requestId: s.u32(),
+  totalHostExecutionDurationMicros: s.u64(),
   get queryId() {
     return R;
   },
   get rows() {
     return Yt;
   }
-}), qn = a.object("SubscriptionError", {
-  totalHostExecutionDurationMicros: a.u64(),
-  requestId: a.option(a.u32()),
-  queryId: a.option(a.u32()),
-  tableId: a.option(a.u32()),
-  error: a.string()
-}), En = a.object("SubscribeMultiApplied", {
-  requestId: a.u32(),
-  totalHostExecutionDurationMicros: a.u64(),
+}), qn = s.object("SubscriptionError", {
+  totalHostExecutionDurationMicros: s.u64(),
+  requestId: s.option(s.u32()),
+  queryId: s.option(s.u32()),
+  tableId: s.option(s.u32()),
+  error: s.string()
+}), En = s.object("SubscribeMultiApplied", {
+  requestId: s.u32(),
+  totalHostExecutionDurationMicros: s.u64(),
   get queryId() {
     return R;
   },
   get update() {
-    return Oe;
+    return Ne;
   }
-}), kn = a.object("UnsubscribeMultiApplied", {
-  requestId: a.u32(),
-  totalHostExecutionDurationMicros: a.u64(),
+}), kn = s.object("UnsubscribeMultiApplied", {
+  requestId: s.u32(),
+  totalHostExecutionDurationMicros: s.u64(),
   get queryId() {
     return R;
   },
   get update() {
-    return Oe;
+    return Ne;
   }
-}), Fn = a.enum("ProcedureStatus", {
-  Returned: a.byteArray(),
-  OutOfEnergy: a.unit(),
-  InternalError: a.string()
-}), Pn = Fn, Rn = a.object("ProcedureResult", {
+}), Pn = s.enum("ProcedureStatus", {
+  Returned: s.byteArray(),
+  OutOfEnergy: s.unit(),
+  InternalError: s.string()
+}), Fn = Pn, Rn = s.object("ProcedureResult", {
   get status() {
-    return Pn;
+    return Fn;
   },
-  timestamp: a.timestamp(),
-  totalHostExecutionDuration: a.timeDuration(),
-  requestId: a.u32()
-}), Dn = a.enum("ServerMessage", {
+  timestamp: s.timestamp(),
+  totalHostExecutionDuration: s.timeDuration(),
+  requestId: s.u32()
+}), Dn = s.enum("ServerMessage", {
   get InitialSubscription() {
     return wn;
   },
@@ -3633,10 +3633,10 @@ var _ = class {
     return xn;
   },
   get OneOffQueryResponse() {
-    return Sn;
+    return An;
   },
   get SubscribeApplied() {
-    return An;
+    return Cn;
   },
   get UnsubscribeApplied() {
     return Mn;
@@ -3653,7 +3653,7 @@ var _ = class {
   get ProcedureResult() {
     return Rn;
   }
-}), Vn = Dn, He = class {
+}), Vn = Dn, We = class {
   #r = /* @__PURE__ */ new Map();
   on(e, t) {
     let r = this.#r.get(e);
@@ -3687,7 +3687,7 @@ var _ = class {
   warn: "color: #ffc107;",
   error: "color: #dc3545;",
   debug: "color: #28a745;"
-}, F = (e, t) => {
+}, P = (e, t) => {
   console.log(
     `%c${On[e]} ${e.toUpperCase()}%c ${t}`,
     Nn[e],
@@ -3704,21 +3704,21 @@ var _ = class {
    * @param entityClass the entityClass
    */
   constructor(e) {
-    this.tableDef = e, this.rows = /* @__PURE__ */ new Map(), this.emitter = new He();
+    this.tableDef = e, this.rows = /* @__PURE__ */ new Map(), this.emitter = new We();
     const t = this.tableDef.indexes || [];
     for (const r of t) {
-      const n = r, s = this.#r(this.tableDef, n);
-      this[r.name] = s;
+      const n = r, a = this.#r(this.tableDef, n);
+      this[r.name] = a;
     }
   }
   // TODO: this just scans the whole table; we should build proper index structures
   #r(e, t) {
     if (t.algorithm !== "btree")
       throw new Error("Only btree indexes are supported in TableCacheImpl");
-    const r = t.columns, n = (l) => r.map((d) => l[d]), s = (l, d) => {
+    const r = t.columns, n = (l) => r.map((d) => l[d]), a = (l, d) => {
       const f = n(l), y = Array.isArray(d) ? d : [d], v = Math.max(0, y.length - 1);
       for (let p = 0; p < v; p++)
-        if (!qe(f[p], y[p])) return !1;
+        if (!Ee(f[p], y[p])) return !1;
       const b = y[y.length - 1], m = f[v];
       if (b && typeof b == "object" && "from" in b && "to" in b) {
         const p = b.from, w = b.to;
@@ -3732,19 +3732,19 @@ var _ = class {
         }
         return !0;
       } else
-        return !!qe(m, b);
-    }, u = e.constraints.some((l) => l.constraint !== "unique" ? !1 : qe(l.columns, t.columns)), o = this;
+        return !!Ee(m, b);
+    }, u = e.constraints.some((l) => l.constraint !== "unique" ? !1 : Ee(l.columns, t.columns)), o = this;
     return u ? {
       find: (d) => {
         const f = Array.isArray(d) ? d : [d];
         for (const y of o.iter())
-          if (qe(n(y), f)) return y;
+          if (Ee(n(y), f)) return y;
         return null;
       }
     } : {
       *filter(d) {
         for (const f of o.iter())
-          s(f, d) && (yield f);
+          a(f, d) && (yield f);
       }
     };
   }
@@ -3774,18 +3774,18 @@ var _ = class {
   applyOperations = (e, t) => {
     const r = [];
     if (Object.values(this.tableDef.columns).some(
-      (s) => s.columnMetadata.isPrimaryKey === !0
+      (a) => a.columnMetadata.isPrimaryKey === !0
     )) {
-      const s = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map();
+      const a = /* @__PURE__ */ new Map(), u = /* @__PURE__ */ new Map();
       for (const o of e)
         if (o.type === "insert") {
-          const [l, d] = s.get(o.rowId) || [o, 0];
-          s.set(o.rowId, [o, d + 1]);
+          const [l, d] = a.get(o.rowId) || [o, 0];
+          a.set(o.rowId, [o, d + 1]);
         } else {
           const [l, d] = u.get(o.rowId) || [o, 0];
           u.set(o.rowId, [o, d + 1]);
         }
-      for (const [o, [l, d]] of s) {
+      for (const [o, [l, d]] of a) {
         const f = u.get(o);
         if (f) {
           const [y, v] = f, b = d - v, m = this.update(
@@ -3805,34 +3805,34 @@ var _ = class {
         d && r.push(d);
       }
     } else
-      for (const s of e)
-        if (s.type === "insert") {
-          const u = this.insert(t, s);
+      for (const a of e)
+        if (a.type === "insert") {
+          const u = this.insert(t, a);
           u && r.push(u);
         } else {
-          const u = this.delete(t, s);
+          const u = this.delete(t, a);
           u && r.push(u);
         }
     return r;
   };
   update = (e, t, r, n = 0) => {
-    const s = this.rows.get(t);
-    if (!s) {
-      F(
+    const a = this.rows.get(t);
+    if (!a) {
+      P(
         "error",
         `Updating a row that was not present in the cache. Table: ${this.tableDef.name}, RowId: ${t}`
       );
       return;
     }
-    const [u, o] = s, l = Math.max(1, o + n);
+    const [u, o] = a, l = Math.max(1, o + n);
     if (o + n <= 0) {
-      F(
+      P(
         "error",
         `Negative reference count for in table ${this.tableDef.name} row ${t} (${o} + ${n})`
       );
       return;
     }
-    return this.rows.set(t, [r, l]), o === 0 ? (F(
+    return this.rows.set(t, [r, l]), o === 0 ? (P(
       "error",
       `Updating a row id in table ${this.tableDef.name} which was not present in the cache (rowId: ${t})`
     ), {
@@ -3850,11 +3850,11 @@ var _ = class {
     };
   };
   insert = (e, t, r = 1) => {
-    const [n, s] = this.rows.get(t.rowId) || [
+    const [n, a] = this.rows.get(t.rowId) || [
       t.row,
       0
     ];
-    if (this.rows.set(t.rowId, [t.row, s + r]), s === 0)
+    if (this.rows.set(t.rowId, [t.row, a + r]), a === 0)
       return {
         type: "insert",
         table: this.tableDef.name,
@@ -3864,15 +3864,15 @@ var _ = class {
       };
   };
   delete = (e, t, r = 1) => {
-    const [n, s] = this.rows.get(t.rowId) || [
+    const [n, a] = this.rows.get(t.rowId) || [
       t.row,
       0
     ];
-    if (s === 0) {
-      F("warn", "Deleting a row that was not present in the cache");
+    if (a === 0) {
+      P("warn", "Deleting a row that was not present in the cache");
       return;
     }
-    if (s <= r)
+    if (a <= r)
       return this.rows.delete(t.rowId), {
         type: "delete",
         table: this.tableDef.name,
@@ -3880,7 +3880,7 @@ var _ = class {
           this.emitter.emit("delete", e, t.row);
         }
       };
-    this.rows.set(t.rowId, [t.row, s - r]);
+    this.rows.set(t.rowId, [t.row, a - r]);
   };
   /**
    * Register a callback for when a row is newly inserted into the database.
@@ -4025,9 +4025,9 @@ var _ = class {
 function Ln(e, t) {
   const r = Math.min(e.length, t.length);
   for (let n = 0; n < r; n++) {
-    const s = e[n], u = t[n];
-    if (s !== u)
-      return typeof s == "number" && typeof u == "number" ? s - u : typeof s == "string" && typeof u == "string" ? s.localeCompare(u) : typeof s == "string" ? 1 : -1;
+    const a = e[n], u = t[n];
+    if (a !== u)
+      return typeof a == "number" && typeof u == "number" ? a - u : typeof a == "string" && typeof u == "string" ? a.localeCompare(u) : typeof a == "string" ? 1 : -1;
   }
   return e.length - t.length;
 }
@@ -4037,8 +4037,8 @@ var er = class lt {
   patch;
   preRelease;
   buildInfo;
-  constructor(t, r, n, s = null, u = null) {
-    this.major = t, this.minor = r, this.patch = n, this.preRelease = s, this.buildInfo = u;
+  constructor(t, r, n, a = null, u = null) {
+    this.major = t, this.minor = r, this.patch = n, this.preRelease = a, this.buildInfo = u;
   }
   toString() {
     let t = `${this.major}.${this.minor}.${this.patch}`;
@@ -4060,8 +4060,8 @@ var er = class lt {
     const r = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?(?:\+([\da-zA-Z-]+(?:\.[\da-zA-Z-]+)*))?$/, n = t.match(r);
     if (!n)
       throw new Error(`Invalid version string: ${t}`);
-    const s = parseInt(n[1], 10), u = parseInt(n[2], 10), o = parseInt(n[3], 10), l = n[4] ? n[4].split(".").map((f) => isNaN(Number(f)) ? f : Number(f)) : null, d = n[5] || null;
-    return new lt(s, u, o, l, d);
+    const a = parseInt(n[1], 10), u = parseInt(n[2], 10), o = parseInt(n[3], 10), l = n[4] ? n[4].split(".").map((f) => isNaN(Number(f)) ? f : Number(f)) : null, d = n[5] || null;
+    return new lt(a, u, o, l, d);
   }
 }, tr = new er(
   1,
@@ -4079,7 +4079,7 @@ function Et(e) {
 }
 async function rr(e, t, r = 128 * 1024) {
   let n = 0;
-  const s = new ReadableStream({
+  const a = new ReadableStream({
     pull(m) {
       if (n < e.length) {
         const p = e.subarray(
@@ -4090,7 +4090,7 @@ async function rr(e, t, r = 128 * 1024) {
       } else
         m.close();
     }
-  }), u = new DecompressionStream(t), l = s.pipeThrough(u).getReader(), d = [];
+  }), u = new DecompressionStream(t), l = a.pipeThrough(u).getReader(), d = [];
   let f = 0, y;
   for (; !(y = await l.read()).done; )
     d.push(y.value), f += y.value.length;
@@ -4160,15 +4160,15 @@ var Qn = class nr {
     url: t,
     nameOrAddress: r,
     wsProtocol: n,
-    authToken: s,
+    authToken: a,
     compression: u,
     lightMode: o,
     confirmedReads: l
   }) {
     const d = new Headers(), f = await Wn();
     let y;
-    if (s) {
-      d.set("Authorization", `Bearer ${s}`);
+    if (a) {
+      d.set("Authorization", `Bearer ${a}`);
       const m = new URL("v1/identity/websocket-token", t);
       m.protocol = t.protocol === "wss:" ? "https:" : "http:";
       const p = await fetch(m, { method: "POST", headers: d });
@@ -4204,7 +4204,7 @@ var Qn = class nr {
   #e;
   #t;
   #n;
-  #i = new He();
+  #i = new We();
   #l = "gzip";
   #s = !1;
   #a;
@@ -4477,13 +4477,13 @@ var Qn = class nr {
   constructor(e, t, r, n) {
     this.db = e, this.#i.on(
       "applied",
-      (s) => {
-        this.#n = !0, r && r(s);
+      (a) => {
+        this.#n = !0, r && r(a);
       }
     ), this.#i.on(
       "error",
-      (s, u) => {
-        this.#n = !1, this.#t = !0, n && n(s, u);
+      (a, u) => {
+        this.#n = !1, this.#t = !0, n && n(a, u);
       }
     ), this.#r = this.db.registerSubscription(this, this.#i, t);
   }
@@ -4491,7 +4491,7 @@ var Qn = class nr {
   #e = !1;
   #t = !1;
   #n = !1;
-  #i = new He();
+  #i = new We();
   /**
    * Consumes self and issues an `Unsubscribe` message,
    * removing this query from the client's set of subscribed queries.
@@ -4595,12 +4595,12 @@ var Yn = class {
   /**
    * The `ConnectionId` of the connection to to the database.
    */
-  connectionId = De.random();
+  connectionId = Ve.random();
   // These fields are meant to be strictly private.
   #r = 0;
   #e = 0;
   #t;
-  #n = new He();
+  #n = new We();
   #i;
   #l = Promise.resolve();
   #s = new Zn();
@@ -4619,16 +4619,16 @@ var Yn = class {
     nameOrAddress: t,
     identity: r,
     token: n,
-    emitter: s,
+    emitter: a,
     remoteModule: u,
     createWSFn: o,
     compression: l,
     lightMode: d,
     confirmedReads: f
   }) {
-    F("info", "Connecting to SpacetimeDB WS...");
+    P("info", "Connecting to SpacetimeDB WS...");
     const y = new URL(e.toString());
-    /^wss?:/.test(e.protocol) || (y.protocol = y.protocol === "https:" ? "wss:" : "ws:"), this.identity = r, this.token = n, this.#a = u, this.#t = s;
+    /^wss?:/.test(e.protocol) || (y.protocol = y.protocol === "https:" ? "wss:" : "ws:"), this.identity = r, this.token = n, this.#a = u, this.#t = a;
     const v = this.connectionId.toHexString();
     y.searchParams.set("connection_id", v), this.clientCache = new zn(), this.db = this.#f(u), this.reducers = this.#y(u), this.setReducerFlags = this.#g(u), this.procedures = this.#b(u), this.wsPromise = o({
       url: y,
@@ -4643,7 +4643,7 @@ var Yn = class {
     }, this.ws.onerror = (m) => {
       this.#t.emit("connectError", this, m), this.isActive = !1;
     }, this.ws.onopen = this.#v.bind(this), this.ws.onmessage = this.#_.bind(this), b)).catch((b) => {
-      F("error", "Error connecting to SpacetimeDB WS"), this.#t.emit("connectError", this, b);
+      P("error", "Error connecting to SpacetimeDB WS"), this.#t.emit("connectError", this, b);
     });
   }
   #m = () => {
@@ -4666,7 +4666,7 @@ var Yn = class {
   #y(e) {
     const t = {};
     for (const r of e.reducers) {
-      const n = Ee(r.name);
+      const n = ke(r.name);
       t[n] = (o) => {
         const l = this.#o.get(r.name) ?? "FullUpdate";
         this.callReducerWithParams(
@@ -4676,11 +4676,11 @@ var Yn = class {
           l
         );
       };
-      const s = `on${Re(r.name)}`;
-      t[s] = (o) => {
+      const a = `on${De(r.name)}`;
+      t[a] = (o) => {
         this.onReducer(r.name, o);
       };
-      const u = `removeOn${Re(r.name)}`;
+      const u = `removeOn${De(r.name)}`;
       t[u] = (o) => {
         this.offReducer(r.name, o);
       };
@@ -4690,12 +4690,12 @@ var Yn = class {
   #g(e) {
     const t = /* @__PURE__ */ Object.create(null);
     for (const r of e.reducers) {
-      const n = Ee(r.name);
+      const n = ke(r.name);
       Object.defineProperty(t, n, {
         enumerable: !0,
         configurable: !1,
-        value: (s) => {
-          this.#o.set(r.name, s);
+        value: (a) => {
+          this.#o.set(r.name, a);
         }
       });
     }
@@ -4704,10 +4704,10 @@ var Yn = class {
   #b(e) {
     const t = {};
     for (const r of e.procedures) {
-      const n = Ee(r.name), s = new Te(r.params).algebraicType.value, u = r.returnType.algebraicType;
+      const n = ke(r.name), a = new xe(r.params).algebraicType.value, u = r.returnType.algebraicType;
       t[n] = (o) => this.callProcedureWithParams(
         r.name,
-        s,
+        a,
         o,
         u
       );
@@ -4739,7 +4739,7 @@ var Yn = class {
       handle: e,
       emitter: t
     }), this.#d(
-      Me.SubscribeMulti({
+      qe.SubscribeMulti({
         queryStrings: r,
         queryId: { id: n },
         // The TypeScript SDK doesn't currently track `request_id`s,
@@ -4750,7 +4750,7 @@ var Yn = class {
   }
   unregisterSubscription(e) {
     this.#d(
-      Me.UnsubscribeMulti({
+      qe.UnsubscribeMulti({
         queryId: { id: e },
         // The TypeScript SDK doesn't currently track `request_id`s,
         // so always use 0.
@@ -4760,7 +4760,7 @@ var Yn = class {
   }
   // This function is async because we decompress the message async
   async #w(e) {
-    const t = (s, u, o) => {
+    const t = (a, u, o) => {
       const l = o.rowsData, d = new J(l), f = [], y = this.#a.tables.find((w) => w.name === u), v = y.rowType, m = Object.entries(y.columns).find(
         (w) => w[1].columnMetadata.isPrimaryKey
       );
@@ -4779,16 +4779,16 @@ var Yn = class {
           U = Kt.fromByteArray(g);
         }
         p = d.offset, f.push({
-          type: s,
+          type: a,
           rowId: U,
           row: w
         });
       }
       return f;
-    }, r = async (s) => {
-      const u = s.tableName;
+    }, r = async (a) => {
+      const u = a.tableName;
       let o = [];
-      for (const l of s.updates) {
+      for (const l of a.updates) {
         let d;
         if (l.tag === "Gzip") {
           const f = await rr(l.value, "gzip");
@@ -4813,38 +4813,38 @@ var Yn = class {
         tableName: u,
         operations: o
       };
-    }, n = async (s) => {
+    }, n = async (a) => {
       const u = [];
-      for (const o of s.tables)
+      for (const o of a.tables)
         u.push(await r(o));
       return u;
     };
     switch (e.tag) {
       case "InitialSubscription": {
-        const s = e.value.databaseUpdate;
+        const a = e.value.databaseUpdate;
         return {
           tag: "InitialSubscription",
-          tableUpdates: await n(s)
+          tableUpdates: await n(a)
         };
       }
       case "TransactionUpdateLight": {
-        const s = e.value.update;
+        const a = e.value.update;
         return {
           tag: "TransactionUpdateLight",
-          tableUpdates: await n(s)
+          tableUpdates: await n(a)
         };
       }
       case "TransactionUpdate": {
-        const s = e.value, u = s.callerIdentity, o = De.nullIfZero(
-          s.callerConnectionId
-        ), l = s.reducerCall.reducerName, d = s.reducerCall.args, f = s.energyQuantaUsed;
+        const a = e.value, u = a.callerIdentity, o = Ve.nullIfZero(
+          a.callerConnectionId
+        ), l = a.reducerCall.reducerName, d = a.reducerCall.args, f = a.energyQuantaUsed;
         let y = [], v = "";
-        switch (s.status.tag) {
+        switch (a.status.tag) {
           case "Committed":
-            y = await n(s.status.value);
+            y = await n(a.status.value);
             break;
           case "Failed":
-            y = [], v = s.status.value;
+            y = [], v = a.status.value;
             break;
           case "OutOfEnergy":
             y = [];
@@ -4864,10 +4864,10 @@ var Yn = class {
           identity: u,
           connectionId: o,
           reducerInfo: b,
-          status: s.status,
+          status: a.status,
           energyConsumed: f.quanta,
           message: v,
-          timestamp: s.timestamp
+          timestamp: a.timestamp
         };
       }
       case "IdentityToken":
@@ -4882,23 +4882,23 @@ var Yn = class {
           `TypeScript SDK never sends one-off queries, but got OneOffQueryResponse ${e}`
         );
       case "SubscribeMultiApplied": {
-        const s = await n(
+        const a = await n(
           e.value.update
         );
         return {
           tag: "SubscribeApplied",
           queryId: e.value.queryId.id,
-          tableUpdates: s
+          tableUpdates: a
         };
       }
       case "UnsubscribeMultiApplied": {
-        const s = await n(
+        const a = await n(
           e.value.update
         );
         return {
           tag: "UnsubscribeApplied",
           queryId: e.value.queryId.id,
-          tableUpdates: s
+          tableUpdates: a
         };
       }
       case "SubscriptionError":
@@ -4908,14 +4908,14 @@ var Yn = class {
           error: e.value.error
         };
       case "ProcedureResult": {
-        const { status: s, requestId: u } = e.value;
+        const { status: a, requestId: u } = e.value;
         return {
           tag: "ProcedureResult",
           requestId: u,
-          result: s.tag === "Returned" ? { tag: "Ok", value: s.value } : s.tag === "OutOfEnergy" ? {
+          result: a.tag === "Returned" ? { tag: "Ok", value: a.value } : a.tag === "OutOfEnergy" ? {
             tag: "Err",
             value: "Procedure execution aborted due to insufficient energy"
-          } : { tag: "Err", value: s.value }
+          } : { tag: "Err", value: a.value }
         };
       }
     }
@@ -4926,7 +4926,7 @@ var Yn = class {
         const r = new G(1024);
         h.serializeValue(
           r,
-          Me.algebraicType,
+          qe.algebraicType,
           e
         );
         const n = r.getBuffer();
@@ -4943,8 +4943,8 @@ var Yn = class {
   #c(e, t) {
     const r = [];
     for (const n of e) {
-      const s = n.tableName, u = this.#a.tables.find(
-        (d) => d.name === s
+      const a = n.tableName, u = this.#a.tables.find(
+        (d) => d.name === a
       ), l = this.clientCache.getOrCreateTable(u).applyOperations(
         n.operations,
         t
@@ -4962,9 +4962,9 @@ var Yn = class {
     if (r)
       switch (r.tag) {
         case "InitialSubscription": {
-          const n = { tag: "SubscribeApplied" }, s = this.#u(n), { event: u, ...o } = s, l = this.#c(
+          const n = { tag: "SubscribeApplied" }, a = this.#u(n), { event: u, ...o } = a, l = this.#c(
             r.tableUpdates,
-            s
+            a
           );
           this.#t && this.#i?.(o);
           for (const d of l)
@@ -4972,9 +4972,9 @@ var Yn = class {
           break;
         }
         case "TransactionUpdateLight": {
-          const n = { tag: "UnknownTransaction" }, s = this.#u(n), u = this.#c(
+          const n = { tag: "UnknownTransaction" }, a = this.#u(n), u = this.#c(
             r.tableUpdates,
-            s
+            a
           );
           for (const o of u)
             o.cb();
@@ -4982,16 +4982,16 @@ var Yn = class {
         }
         case "TransactionUpdate": {
           let n = r.reducerInfo;
-          const s = n === void 0 ? void 0 : this.#a.reducers.find(
+          const a = n === void 0 ? void 0 : this.#a.reducers.find(
             (b) => b.name === n.reducerName
           );
-          let u, o = s === void 0;
-          if (s)
+          let u, o = a === void 0;
+          if (a)
             try {
               const b = new J(n.args);
               u = Z.deserializeValue(
                 b,
-                s.paramsType
+                a.paramsType
               );
             } catch {
               console.debug("Failed to deserialize reducer arguments"), o = !0;
@@ -5044,13 +5044,13 @@ var Yn = class {
             r.queryId
           );
           if (n === void 0) {
-            F(
+            P(
               "error",
               `Received SubscribeApplied for unknown queryId ${r.queryId}.`
             );
             break;
           }
-          const s = { tag: "SubscribeApplied" }, u = this.#u(s), { event: o, ...l } = u, d = this.#c(
+          const a = { tag: "SubscribeApplied" }, u = this.#u(a), { event: o, ...l } = u, d = this.#c(
             r.tableUpdates,
             u
           );
@@ -5064,13 +5064,13 @@ var Yn = class {
             r.queryId
           );
           if (n === void 0) {
-            F(
+            P(
               "error",
               `Received UnsubscribeApplied for unknown queryId ${r.queryId}.`
             );
             break;
           }
-          const s = { tag: "UnsubscribeApplied" }, u = this.#u(s), { event: o, ...l } = u, d = this.#c(
+          const a = { tag: "UnsubscribeApplied" }, u = this.#u(a), { event: o, ...l } = u, d = this.#c(
             r.tableUpdates,
             u
           );
@@ -5080,8 +5080,8 @@ var Yn = class {
           break;
         }
         case "SubscriptionError": {
-          const n = Error(r.error), s = { tag: "Error", value: n }, o = {
-            ...this.#u(s),
+          const n = Error(r.error), a = { tag: "Error", value: n }, o = {
+            ...this.#u(a),
             event: n
           };
           r.queryId !== void 0 ? (this.#s.subscriptions.get(r.queryId)?.emitter.emit("error", o, n), this.#s.subscriptions.delete(r.queryId)) : (console.error("Received an error message without a queryId: ", n), this.#s.subscriptions.forEach(({ emitter: l }) => {
@@ -5090,8 +5090,8 @@ var Yn = class {
           break;
         }
         case "ProcedureResult": {
-          const { requestId: n, result: s } = r, u = this.#h.get(n);
-          this.#h.delete(n), u?.(s);
+          const { requestId: n, result: a } = r, u = this.#h.get(n);
+          this.#h.delete(n), u?.(a);
           break;
         }
       }
@@ -5110,7 +5110,7 @@ var Yn = class {
    * @param argsSerializer The arguments to pass to the reducer
    */
   callReducer(e, t, r) {
-    const n = Me.CallReducer({
+    const n = qe.CallReducer({
       reducer: e,
       args: t,
       // The TypeScript SDK doesn't currently track `request_id`s,
@@ -5127,9 +5127,9 @@ var Yn = class {
    * @param params The arguments to pass to the reducer
    */
   callReducerWithParams(e, t, r, n) {
-    const s = new G(1024);
-    Z.serializeValue(s, t, r);
-    const u = s.getBuffer();
+    const a = new G(1024);
+    Z.serializeValue(a, t, r);
+    const u = a.getBuffer();
     this.callReducer(e, u, n);
   }
   /**
@@ -5139,7 +5139,7 @@ var Yn = class {
    * @param argsBuffer The arguments to pass to the reducer
    */
   callProcedure(e, t) {
-    const { promise: r, resolve: n, reject: s } = Promise.withResolvers(), u = this.#p(), o = Me.CallProcedure({
+    const { promise: r, resolve: n, reject: a } = Promise.withResolvers(), u = this.#p(), o = qe.CallProcedure({
       procedure: e,
       args: t,
       requestId: u,
@@ -5147,7 +5147,7 @@ var Yn = class {
       flags: 0
     });
     return this.#d(o), this.#h.set(u, (l) => {
-      l.tag === "Ok" ? n(l.value) : s(l.value);
+      l.tag === "Ok" ? n(l.value) : a(l.value);
     }), r;
   }
   /**
@@ -5157,9 +5157,9 @@ var Yn = class {
    * @param params The arguments to pass to the reducer
    */
   callProcedureWithParams(e, t, r, n) {
-    const s = new G(1024);
-    Z.serializeValue(s, t, r);
-    const u = s.getBuffer();
+    const a = new G(1024);
+    Z.serializeValue(a, t, r);
+    const u = a.getBuffer();
     return this.callProcedure(e, u).then((o) => h.deserializeValue(
       new J(o),
       n
@@ -5214,17 +5214,17 @@ var Yn = class {
   offReducer(e, t) {
     this.#n.off(e, t);
   }
-}, ei = a.enum("Lifecycle", {
-  Init: a.unit(),
-  OnConnect: a.unit(),
-  OnDisconnect: a.unit()
+}, ei = s.enum("Lifecycle", {
+  Init: s.unit(),
+  OnConnect: s.unit(),
+  OnDisconnect: s.unit()
 }), yt = ei;
-function We(e, t, r, n) {
+function Qe(e, t, r, n) {
   if (kt.has(e))
     throw new TypeError(`There is already a reducer with the name '${e}'`);
-  kt.add(e), t instanceof E || (t = new E(t)), t.typeName === void 0 && (t.typeName = Re(e));
-  const s = S(t), u = sr(A.typespace, s).value;
-  A.reducers.push({
+  kt.add(e), t instanceof k || (t = new k(t)), t.typeName === void 0 && (t.typeName = De(e));
+  const a = C(t), u = sr(M.typespace, a).value;
+  M.reducers.push({
     name: e,
     params: u,
     lifecycle: n
@@ -5232,17 +5232,17 @@ function We(e, t, r, n) {
   }), r.name || Object.defineProperty(r, "name", { value: e, writable: !1 });
 }
 var kt = /* @__PURE__ */ new Set();
-function Ft(e, t, r) {
-  We(e, t, r);
+function Pt(e, t, r) {
+  Qe(e, t, r);
 }
 function ti(e, t, r) {
-  We(e, t, r, yt.Init);
+  Qe(e, t, r, yt.Init);
 }
 function ri(e, t, r) {
-  We(e, t, r, yt.OnConnect);
+  Qe(e, t, r, yt.OnConnect);
 }
 function ni(e, t, r) {
-  We(e, t, r, yt.OnDisconnect);
+  Qe(e, t, r, yt.OnDisconnect);
 }
 var ii = class {
   reducersType;
@@ -5252,12 +5252,12 @@ var ii = class {
 };
 function si(e) {
   return { reducers: e.map((n) => {
-    const s = n.params.row;
+    const a = n.params.row;
     return {
       name: n.reducerName,
       // Prefer the schema's own accessorName if present at runtime; otherwise derive it.
       accessorName: n.accessorName,
-      params: s,
+      params: a,
       paramsType: n.paramsSpacetimeType
     };
   }) };
@@ -5266,17 +5266,17 @@ function ai(...e) {
   const t = e.length === 1 && Array.isArray(e[0]) ? e[0] : e;
   return new ii(t);
 }
-function k(e, t) {
+function S(e, t) {
   const r = {
-    elements: Object.entries(t).map(([n, s]) => ({
+    elements: Object.entries(t).map(([n, a]) => ({
       name: n,
-      algebraicType: "typeBuilder" in s ? s.typeBuilder.algebraicType : s.algebraicType
+      algebraicType: "typeBuilder" in a ? a.typeBuilder.algebraicType : a.algebraicType
     }))
   };
   return {
     reducerName: e,
-    accessorName: Ee(e),
-    params: new E(t),
+    accessorName: ke(e),
+    params: new k(t),
     paramsSpacetimeType: r,
     reducerDef: {
       name: e,
@@ -5285,14 +5285,14 @@ function k(e, t) {
     }
   };
 }
-function Pt(e, t, r, n, s) {
-  const u = new E(r, Re(e.name));
-  let o = S(n).algebraicType;
+function Ft(e, t, r, n, a) {
+  const u = new k(r, De(e.name));
+  let o = C(n).algebraicType;
   const { value: l } = sr(
-    A.typespace,
-    S(u)
+    M.typespace,
+    C(u)
   );
-  if (A.miscExports.push({
+  if (M.miscExports.push({
     tag: "View",
     value: {
       name: e.name,
@@ -5303,8 +5303,8 @@ function Pt(e, t, r, n, s) {
       returnType: o
     }
   }), o.tag == "Sum") {
-    const d = s;
-    s = ((f, y) => {
+    const d = a;
+    a = ((f, y) => {
       const v = d(f, y);
       return v == null ? [] : [v];
     }), o = h.Array(
@@ -5312,34 +5312,34 @@ function Pt(e, t, r, n, s) {
     );
   }
   (t ? Dt : Rt).push({
-    fn: s,
+    fn: a,
     params: l,
     returnType: o,
-    returnTypeBaseSize: ke(A.typespace, o)
+    returnTypeBaseSize: Pe(M.typespace, o)
   });
 }
 var Rt = [], Dt = [];
 function Vt(e, t, r, n) {
-  const s = {
+  const a = {
     elements: Object.entries(t).map(([o, l]) => ({
       name: o,
-      algebraicType: S(
+      algebraicType: C(
         "typeBuilder" in l ? l.typeBuilder : l
       ).algebraicType
     }))
-  }, u = S(r).algebraicType;
-  A.miscExports.push({
+  }, u = C(r).algebraicType;
+  M.miscExports.push({
     tag: "Procedure",
     value: {
       name: e,
-      params: s,
+      params: a,
       returnType: u
     }
   }), ui.push({
     fn: n,
-    paramsType: s,
+    paramsType: a,
     returnType: u,
-    returnTypeBaseSize: ke(A.typespace, u)
+    returnTypeBaseSize: Pe(M.typespace, u)
   });
 }
 var ui = [];
@@ -5353,7 +5353,7 @@ function li(e) {
   const t = (r) => e.rowType.algebraicType.value.elements[r].name;
   return {
     name: e.tableName,
-    accessorName: Ee(e.tableName),
+    accessorName: ke(e.tableName),
     columns: e.rowType.row,
     // typed as T[i]['rowType']['row'] under TablesToSchema<T>
     rowType: e.rowSpacetimeType,
@@ -5371,7 +5371,7 @@ function li(e) {
       return {
         name: r.accessorName,
         unique: e.tableDef.constraints.some(
-          (s) => s.data.value.columns.every((u) => n.includes(u))
+          (a) => a.data.value.columns.every((u) => n.includes(u))
         ),
         algorithm: r.algorithm.tag.toLowerCase(),
         columns: n.map(t)
@@ -5379,7 +5379,7 @@ function li(e) {
     })
   };
 }
-var A = {
+var M = {
   typespace: { types: [] },
   tables: [],
   reducers: [],
@@ -5393,14 +5393,14 @@ function sr(e, t) {
     r = e.types[r.value];
   return r;
 }
-function S(e) {
-  return e instanceof Te && !hi(e) || e instanceof ft || e instanceof E ? di(e) : e instanceof ze ? new ze(
-    S(e.value)
+function C(e) {
+  return e instanceof xe && !hi(e) || e instanceof ft || e instanceof k ? di(e) : e instanceof Le ? new Le(
+    C(e.value)
   ) : e instanceof Xe ? new Xe(
-    S(e.ok),
-    S(e.err)
+    C(e.ok),
+    C(e.err)
   ) : e instanceof Ge ? new Ge(
-    S(e.element)
+    C(e.element)
   ) : e;
 }
 function di(e) {
@@ -5412,29 +5412,29 @@ function di(e) {
   let n = Ot.get(t);
   if (n != null)
     return n;
-  const s = e instanceof E || e instanceof Te ? {
+  const a = e instanceof k || e instanceof xe ? {
     tag: "Product",
     value: { elements: [] }
   } : { tag: "Sum", value: { variants: [] } };
-  if (n = new nn(A.typespace.types.length), A.typespace.types.push(s), Ot.set(t, n), e instanceof E)
+  if (n = new nn(M.typespace.types.length), M.typespace.types.push(a), Ot.set(t, n), e instanceof k)
     for (const [u, o] of Object.entries(e.row))
-      s.value.elements.push({
+      a.value.elements.push({
         name: u,
-        algebraicType: S(o.typeBuilder).algebraicType
+        algebraicType: C(o.typeBuilder).algebraicType
       });
-  else if (e instanceof Te)
+  else if (e instanceof xe)
     for (const [u, o] of Object.entries(e.elements))
-      s.value.elements.push({
+      a.value.elements.push({
         name: u,
-        algebraicType: S(o).algebraicType
+        algebraicType: C(o).algebraicType
       });
   else if (e instanceof ft)
     for (const [u, o] of Object.entries(e.variants))
-      s.value.variants.push({
+      a.value.variants.push({
         name: u,
-        algebraicType: S(o).algebraicType
+        algebraicType: C(o).algebraicType
       });
-  return A.types.push({
+  return M.types.push({
     name: mi(r),
     ty: n.ref,
     customOrdering: !0
@@ -5455,7 +5455,7 @@ var pi = class {
     this.tablesDef = { tables: e }, this.typespace = t, this.schemaType = ci(r);
   }
   reducer(e, t, r) {
-    return typeof t == "function" ? (Ft(e, {}, t), t) : (Ft(e, t, r), r);
+    return typeof t == "function" ? (Pt(e, {}, t), t) : (Pt(e, t, r), r);
   }
   init(e, t) {
     const [r, n] = typeof e == "string" ? [e, t] : ["init", e];
@@ -5470,7 +5470,7 @@ var pi = class {
     ni(r, {}, n);
   }
   view(e, t, r) {
-    Pt(e, !1, {}, t, r);
+    Ft(e, !1, {}, t, r);
   }
   // TODO: re-enable once parameterized views are supported in SQL
   // view<Ret extends ViewReturnTypeBuilder>(
@@ -5497,47 +5497,47 @@ var pi = class {
   //   }
   // }
   anonymousView(e, t, r) {
-    Pt(e, !0, {}, t, r);
+    Ft(e, !0, {}, t, r);
   }
   procedure(e, t, r, n) {
     return typeof r == "function" ? (Vt(e, {}, t, r), r) : (Vt(e, t, r, n), n);
   }
   clientVisibilityFilter = {
     sql(e) {
-      A.rowLevelSecurity.push({ sql: e });
+      M.rowLevelSecurity.push({ sql: e });
     }
   };
 };
 function fi(...e) {
   const t = e.length === 1 && Array.isArray(e[0]) ? e[0] : e, r = t.map((n) => n.tableDef);
-  return A.tables.push(...r), t.map((n) => ({
+  return M.tables.push(...r), t.map((n) => ({
     name: n.tableName,
     accessorName: n.tableName,
     columns: n.rowType.row,
     rowType: n.rowSpacetimeType,
     indexes: n.idxs,
     constraints: n.constraints
-  })), new pi(r, A.typespace, t);
+  })), new pi(r, M.typespace, t);
 }
 function ar(e) {
   return Object.fromEntries(
     e.map((t) => [t.accessorName, t])
   );
 }
-var yi = a.enum("RawIndexAlgorithm", {
-  BTree: a.array(a.u16()),
-  Hash: a.array(a.u16()),
-  Direct: a.u16()
+var yi = s.enum("RawIndexAlgorithm", {
+  BTree: s.array(s.u16()),
+  Hash: s.array(s.u16()),
+  Direct: s.u16()
 }), Nt = yi;
-function Je(e, t, ...r) {
+function ye(e, t, ...r) {
   const {
     name: n,
-    public: s = !1,
+    public: a = !1,
     indexes: u = [],
     scheduled: o
   } = e, l = /* @__PURE__ */ new Map(), d = [];
-  t instanceof E || (t = new E(t)), t.typeName === void 0 && (t.typeName = Re(n));
-  const f = S(t);
+  t instanceof k || (t = new k(t)), t.typeName === void 0 && (t.typeName = De(n));
+  const f = C(t);
   t.algebraicType.value.elements.forEach((g, I) => {
     l.set(g.name, I), d.push(g.name);
   });
@@ -5546,16 +5546,16 @@ function Je(e, t, ...r) {
   for (const [g, I] of Object.entries(t.row)) {
     const T = I.columnMetadata;
     T.isPrimaryKey && y.push(l.get(g));
-    const q = T.isUnique || T.isPrimaryKey;
-    if (T.indexType || q) {
+    const E = T.isUnique || T.isPrimaryKey;
+    if (T.indexType || E) {
       const x = T.indexType ?? "btree", bt = l.get(g);
-      let Qe;
+      let Je;
       switch (x) {
         case "btree":
-          Qe = Nt.BTree([bt]);
+          Je = Nt.BTree([bt]);
           break;
         case "direct":
-          Qe = Nt.Direct(bt);
+          Je = Nt.Direct(bt);
           break;
       }
       v.push({
@@ -5563,10 +5563,10 @@ function Je(e, t, ...r) {
         // Unnamed indexes will be assigned a globally unique name
         accessorName: g,
         // The name of this column will be used as the accessor name
-        algorithm: Qe
+        algorithm: Je
       });
     }
-    if (q && b.push({
+    if (E && b.push({
       name: void 0,
       data: { tag: "Unique", value: { columns: [l.get(g)] } }
     }), T.isAutoIncrement && m.push({
@@ -5606,7 +5606,7 @@ function Je(e, t, ...r) {
       continue;
     }
   for (const g of v) {
-    const T = (g.algorithm.tag === "Direct" ? [g.algorithm.value] : g.algorithm.value).map((q) => d[q]).join("_");
+    const T = (g.algorithm.tag === "Direct" ? [g.algorithm.value] : g.algorithm.value).map((E) => d[E]).join("_");
     g.name = `${n}_${T}_idx_${g.algorithm.tag.toLowerCase()}`;
   }
   const w = {
@@ -5622,7 +5622,7 @@ function Je(e, t, ...r) {
       scheduledAtColumn: p
     } : void 0,
     tableType: { tag: "User" },
-    tableAccess: { tag: s ? "Public" : "Private" }
+    tableAccess: { tag: a ? "Public" : "Private" }
   }, U = t.algebraicType.value;
   return {
     rowType: t,
@@ -5634,106 +5634,152 @@ function Je(e, t, ...r) {
   };
 }
 const gi = {
-  username: a.string(),
-  password: a.string()
+  username: s.string(),
+  password: s.string()
 }, bi = {
-  title: a.string(),
-  body: a.string(),
-  postDate: a.u64(),
-  linkUrl: a.string(),
-  category: a.string(),
-  imageUrl: a.string()
+  title: s.string(),
+  body: s.string(),
+  postDate: s.u64(),
+  linkUrl: s.string(),
+  category: s.string(),
+  imageUrl: s.string()
 }, wi = {
-  username: a.string()
+  username: s.string(),
+  password: s.string()
 }, vi = {
-  postId: a.u64()
+  slug: s.string(),
+  title: s.string(),
+  body: s.string()
 }, Ii = {
-  postId: a.u64(),
-  title: a.string(),
-  body: a.string(),
-  postDate: a.u64(),
-  linkUrl: a.string(),
-  category: a.string(),
-  imageUrl: a.string()
+  username: s.string()
 }, _i = {
-  username: a.string(),
-  password: a.string()
-}, Bi = {}, Ui = {
-  postId: a.u64(),
-  moveUp: a.bool()
+  postId: s.u64()
+}, Bi = {
+  username: s.string(),
+  confirmPassword: s.string()
+}, Ui = {
+  slug: s.string()
 }, Ti = {
-  postId: a.u64(),
-  isArchived: a.bool()
-}, xi = a.row({
-  username: a.string().primaryKey(),
-  passwordHash: a.string().name("password_hash"),
-  createdAt: a.u64().name("created_at")
-}), Ci = a.row({
-  identity: a.identity().primaryKey(),
-  username: a.string(),
-  loggedInAt: a.u64().name("logged_in_at")
-}), Si = a.row({
-  postId: a.u64().primaryKey().name("post_id"),
-  title: a.string(),
-  body: a.string(),
-  postDate: a.u64().name("post_date"),
-  linkUrl: a.string().name("link_url"),
-  category: a.string(),
-  imageUrl: a.string().name("image_url"),
-  sortOrder: a.u64().name("sort_order"),
-  isArchived: a.bool().name("is_archived"),
-  createdBy: a.string().name("created_by"),
-  createdAt: a.u64().name("created_at"),
-  updatedAt: a.u64().name("updated_at")
+  postId: s.u64(),
+  title: s.string(),
+  body: s.string(),
+  postDate: s.u64(),
+  linkUrl: s.string(),
+  category: s.string(),
+  imageUrl: s.string()
+}, xi = {
+  slug: s.string(),
+  title: s.string(),
+  body: s.string()
+}, Si = {
+  username: s.string(),
+  password: s.string()
+}, Ai = {}, Ci = {
+  postId: s.u64(),
+  moveUp: s.bool()
+}, Mi = {
+  slug: s.string(),
+  earlier: s.bool()
+}, qi = {
+  postId: s.u64(),
+  isArchived: s.bool()
+}, Ei = s.row({
+  username: s.string(),
+  isAdmin: s.bool().name("is_admin"),
+  createdAt: s.u64().name("created_at"),
+  serialPosts: s.u32().name("serial_posts"),
+  activeSessions: s.u32().name("active_sessions")
+}), ki = s.row({
+  username: s.string().primaryKey(),
+  passwordHash: s.string().name("password_hash"),
+  isAdmin: s.bool().name("is_admin"),
+  createdAt: s.u64().name("created_at")
+}), Pi = s.row({
+  username: s.string(),
+  isAdmin: s.bool().name("is_admin")
+}), Fi = s.row({
+  postId: s.u64().primaryKey().name("post_id"),
+  title: s.string(),
+  body: s.string(),
+  postDate: s.u64().name("post_date"),
+  linkUrl: s.string().name("link_url"),
+  category: s.string(),
+  imageUrl: s.string().name("image_url"),
+  sortOrder: s.u64().name("sort_order"),
+  isArchived: s.bool().name("is_archived"),
+  createdBy: s.string().name("created_by"),
+  createdAt: s.u64().name("created_at"),
+  updatedAt: s.u64().name("updated_at")
+}), Ri = s.row({
+  slug: s.string().primaryKey(),
+  title: s.string(),
+  body: s.string(),
+  createdBy: s.string().name("created_by"),
+  publishedAt: s.u64().name("published_at"),
+  sortOrder: s.u64().name("sort_order")
+}), Di = s.row({
+  identity: s.identity().primaryKey(),
+  username: s.string()
 });
-a.object("AdminAccount", {
-  username: a.string(),
-  passwordHash: a.string(),
-  createdAt: a.u64()
+s.object("Account", {
+  username: s.string(),
+  passwordHash: s.string(),
+  isAdmin: s.bool(),
+  createdAt: s.u64()
 });
-a.object("LoggedInAdmin", {
-  identity: a.identity(),
-  username: a.string(),
-  loggedInAt: a.u64()
+s.object("AccountSummary", {
+  username: s.string(),
+  isAdmin: s.bool(),
+  createdAt: s.u64(),
+  serialPosts: s.u32(),
+  activeSessions: s.u32()
 });
-a.object("Post", {
-  postId: a.u64(),
-  title: a.string(),
-  body: a.string(),
-  postDate: a.u64(),
-  linkUrl: a.string(),
-  category: a.string(),
-  imageUrl: a.string(),
-  sortOrder: a.u64(),
-  isArchived: a.bool(),
-  createdBy: a.string(),
-  createdAt: a.u64(),
-  updatedAt: a.u64()
+s.object("MyAccount", {
+  username: s.string(),
+  isAdmin: s.bool()
+});
+s.object("Post", {
+  postId: s.u64(),
+  title: s.string(),
+  body: s.string(),
+  postDate: s.u64(),
+  linkUrl: s.string(),
+  category: s.string(),
+  imageUrl: s.string(),
+  sortOrder: s.u64(),
+  isArchived: s.bool(),
+  createdBy: s.string(),
+  createdAt: s.u64(),
+  updatedAt: s.u64()
+});
+s.object("SerialPost", {
+  slug: s.string(),
+  title: s.string(),
+  body: s.string(),
+  createdBy: s.string(),
+  publishedAt: s.u64(),
+  sortOrder: s.u64()
+});
+s.object("Session", {
+  identity: s.identity(),
+  username: s.string()
 });
 const gt = fi(
-  Je({
-    name: "admin_accounts",
+  ye({
+    name: "accounts",
     indexes: [
+      { name: "is_admin", algorithm: "btree", columns: [
+        "isAdmin"
+      ] },
       { name: "username", algorithm: "btree", columns: [
         "username"
       ] }
     ],
     constraints: [
-      { name: "admin_accounts_username_key", constraint: "unique", columns: ["username"] }
+      { name: "accounts_username_key", constraint: "unique", columns: ["username"] }
     ]
-  }, xi),
-  Je({
-    name: "logged_in_admins",
-    indexes: [
-      { name: "identity", algorithm: "btree", columns: [
-        "identity"
-      ] }
-    ],
-    constraints: [
-      { name: "logged_in_admins_identity_key", constraint: "unique", columns: ["identity"] }
-    ]
-  }, Ci),
-  Je({
+  }, ki),
+  ye({
     name: "posts",
     indexes: [
       { name: "post_id", algorithm: "btree", columns: [
@@ -5743,56 +5789,100 @@ const gt = fi(
     constraints: [
       { name: "posts_post_id_key", constraint: "unique", columns: ["postId"] }
     ]
-  }, Si)
+  }, Fi),
+  ye({
+    name: "serial_posts",
+    indexes: [
+      { name: "created_by", algorithm: "btree", columns: [
+        "createdBy"
+      ] },
+      { name: "slug", algorithm: "btree", columns: [
+        "slug"
+      ] }
+    ],
+    constraints: [
+      { name: "serial_posts_slug_key", constraint: "unique", columns: ["slug"] }
+    ]
+  }, Ri),
+  ye({
+    name: "sessions",
+    indexes: [
+      { name: "identity", algorithm: "btree", columns: [
+        "identity"
+      ] },
+      { name: "username", algorithm: "btree", columns: [
+        "username"
+      ] }
+    ],
+    constraints: [
+      { name: "sessions_identity_key", constraint: "unique", columns: ["identity"] }
+    ]
+  }, Di),
+  ye({
+    name: "account_audit",
+    indexes: [],
+    constraints: []
+  }, Ei),
+  ye({
+    name: "my_account",
+    indexes: [],
+    constraints: []
+  }, Pi)
 ), ur = ai(
-  k("create_admin_account", gi),
-  k("create_post", bi),
-  k("delete_admin_account", wi),
-  k("delete_post", vi),
-  k("edit_post", Ii),
-  k("login", _i),
-  k("logout", Bi),
-  k("move_post", Ui),
-  k("set_post_archived", Ti)
-), Ai = oi(), Mi = {
+  S("create_admin_account", gi),
+  S("create_post", bi),
+  S("create_publisher_account", wi),
+  S("create_serial_post", vi),
+  S("delete_admin_account", Ii),
+  S("delete_post", _i),
+  S("delete_publisher_account", Bi),
+  S("delete_serial_post", Ui),
+  S("edit_post", Ti),
+  S("edit_serial_post", xi),
+  S("login", Si),
+  S("logout", Ai),
+  S("move_post", Ci),
+  S("move_serial_post", Mi),
+  S("set_post_archived", qi)
+), Vi = oi(), Oi = {
   versionInfo: {
     cliVersion: "1.12.0"
   },
   tables: gt.schemaType.tables,
   reducers: ur.reducersType.reducers,
-  ...Ai
+  ...Vi
 };
 ar(gt.schemaType.tables);
 Tr(gt.schemaType);
 ar(ur.reducersType.reducers);
-class qi extends ir {
+class Ni extends ir {
 }
-class Ei extends Jn {
+class Ki extends Jn {
 }
-const Le = class Le extends Yn {
+const He = class He extends Yn {
   constructor() {
-    super(...arguments), this.subscriptionBuilder = () => new qi(this);
+    super(...arguments), this.subscriptionBuilder = () => new Ni(this);
   }
 };
-Le.builder = () => new Ei(Mi, (t) => new Le(t));
-let dt = Le;
-const ki = location.hostname === "localhost" || location.hostname === "127.0.0.1" ? "ws://localhost:3000" : "wss://grem.studio/spacetimedb/", Fi = "site-feed", Pi = 8, P = document.getElementById("whats-new-list");
-function Ri(e) {
+He.builder = () => new Ki(Oi, (t) => new He(t));
+let dt = He;
+const ji = location.hostname === "localhost" || location.hostname === "127.0.0.1" ? "ws://localhost:3000" : "wss://grem.studio/spacetimedb/", $i = "site-feed", zi = 8, F = document.getElementById("whats-new-list");
+function Li(e) {
   return new Date(Number(e / 1000n)).toLocaleDateString();
 }
-function Ne(e) {
-  if (!P) return;
+function Ke(e) {
+  if (!F) return;
   const t = [...e.db.posts.iter()].filter((r) => !r.isArchived).sort(
     (r, n) => r.sortOrder === n.sortOrder ? r.postDate > n.postDate ? -1 : r.postDate < n.postDate ? 1 : 0 : r.sortOrder > n.sortOrder ? -1 : 1
-  ).slice(0, Pi);
-  if (P.replaceChildren(), t.length === 0) {
+  ).slice(0, zi);
+  if (F.replaceChildren(), t.length === 0) {
     const r = document.createElement("li");
-    r.textContent = "No updates yet — check back soon!", P.appendChild(r);
+    r.textContent = "No updates yet — check back soon!", F.appendChild(r);
     return;
   }
   for (const r of t) {
-    const n = document.createElement("li"), s = document.createElement("strong");
-    s.textContent = `${Ri(r.postDate)}: `, n.appendChild(s);
+    const n = document.createElement("li"), a = document.createElement("strong");
+    a.textContent = `${Li(r.postDate)}: `, n.appendChild(a);
     const u = document.createElement("strong");
     if (u.textContent = r.title, n.appendChild(u), n.appendChild(document.createTextNode(` — ${r.body}`)), r.linkUrl) {
       n.appendChild(document.createTextNode(" "));
@@ -5803,17 +5893,17 @@ function Ne(e) {
       const o = document.createElement("img");
       o.src = r.imageUrl, o.alt = r.title, o.style.display = "block", o.style.maxWidth = "100%", o.style.marginTop = "8px", n.appendChild(o);
     }
-    P.appendChild(n);
+    F.appendChild(n);
   }
 }
-function Di() {
-  if (!P) return;
-  P.replaceChildren();
+function Hi() {
+  if (!F) return;
+  F.replaceChildren();
   const e = document.createElement("li");
-  e.textContent = "Loading latest updates...", P.appendChild(e);
+  e.textContent = "Loading latest updates...", F.appendChild(e);
 }
-P && dt.builder().withUri(ki).withModuleName(Fi).onConnect((e) => {
-  e.subscriptionBuilder().onApplied(() => Ne(e)).subscribe("SELECT * FROM posts"), e.db.posts.onInsert(() => Ne(e)), e.db.posts.onUpdate(() => Ne(e)), e.db.posts.onDelete(() => Ne(e));
+F && dt.builder().withUri(ji).withModuleName($i).onConnect((e) => {
+  e.subscriptionBuilder().onApplied(() => Ke(e)).subscribe("SELECT * FROM posts"), e.db.posts.onInsert(() => Ke(e)), e.db.posts.onUpdate(() => Ke(e)), e.db.posts.onDelete(() => Ke(e));
 }).onConnectError((e, t) => {
-  console.error("site-feed widget connection error:", t), Di();
+  console.error("site-feed widget connection error:", t), Hi();
 }).build();
