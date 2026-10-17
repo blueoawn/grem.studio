@@ -43,7 +43,20 @@
                         <li>Loading latest updates...</li>
                     </ul>
                 </section>
-                <script type="module" src="feed-widget.js?v=3"></script>
+                <script>
+                    (function() {
+                        function load() {
+                            var s = document.createElement('script');
+                            s.type = 'module';
+                            s.src = 'feed-widget.js?v=3';
+                            document.head.appendChild(s);
+                        }
+                        window.addEventListener('load', function() {
+                            if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 2000 });
+                            else setTimeout(load, 200);
+                        });
+                    })();
+                </script>
 
 
             </div>

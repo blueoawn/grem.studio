@@ -81,18 +81,64 @@
     let lastFrameTime = 0;
 
     return function shouldRender(now) {
-      if (now - lastFrameTime < frameInterval) {
+      const elapsed = now - lastFrameTime;
+      if (elapsed < frameInterval - 1) {
         return false;
       }
-      lastFrameTime = now;
+      // Keep phase aligned to the interval so timing jitter doesn't halve the frame rate
+      lastFrameTime = elapsed > frameInterval * 2 ? now : now - (elapsed % frameInterval);
       return true;
     };
+  }
+
+  const reducedMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Cap canvas pixel ratio by device tier
+  const maxDpr = qualityLevel === 'high' ? 1.5 : 1;
+  function getDpr() {
+    return Math.min(maxDpr, Math.max(1, window.devicePixelRatio || 1));
+  }
+
+  // Animation loop that only runs while the tab and element are visible.
+  // With reduced motion, a single static frame is drawn instead.
+  function createLoop(element, step) {
+    let rafId = 0;
+    let onScreen = true;
+    function frame(now) {
+      rafId = requestAnimationFrame(frame);
+      step(now);
+    }
+    function update() {
+      const shouldRun = onScreen && !document.hidden;
+      if (shouldRun && !rafId) {
+        rafId = requestAnimationFrame(frame);
+      } else if (!shouldRun && rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = 0;
+      }
+    }
+    if (reducedMotion) {
+      requestAnimationFrame(step);
+      return;
+    }
+    document.addEventListener('visibilitychange', update);
+    if (element && 'IntersectionObserver' in window) {
+      new IntersectionObserver(function(entries) {
+        onScreen = entries[entries.length - 1].isIntersecting;
+        update();
+      }).observe(element);
+    }
+    update();
   }
 
   // Export to global scope
   window.PerfSettings = {
     level: qualityLevel,
     settings: settings,
+    reducedMotion: reducedMotion,
+    getDpr: getDpr,
+    createLoop: createLoop,
     createFrameLimiter: createFrameLimiter
   };
 
