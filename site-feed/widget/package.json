@@ -1,7 +1,7 @@
 {
   "name": "site-feed-widget",
   "version": "1.0.0",
-  "description": "Homepage widget that renders live site-feed posts into index.php's What's New section",
+  "description": "Homepage widget that renders live site-feed posts into index.html's What's New section",
   "type": "module",
   "scripts": {
     "build": "vite build",
