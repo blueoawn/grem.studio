@@ -4,7 +4,7 @@ export function NavbarLoader() {
   useEffect(() => {
     if (document.getElementById("navbar")) return;
 
-    fetch("/navbar.php")
+    fetch("/navbar.html")
       .then((r) => r.text())
       .then((html) => {
         document.body.insertAdjacentHTML("afterbegin", html);

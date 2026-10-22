@@ -90,4 +90,4 @@ if $WIPE; then
 fi
 
 step "Done"
-echo "If index.php still serves an old feed widget from cache, bump its feed-widget.js?v= number."
+echo "If index.html still serves an old feed widget from cache, bump its feed-widget.js?v= number."

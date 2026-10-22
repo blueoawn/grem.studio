@@ -12,7 +12,7 @@ used to publish it. Three pieces, sharing the same SpacetimeDB module:
 - To update the live site, run `../deploy.sh` on the host.
 - `admin/` — a React admin UI for logging in and creating/editing/deleting posts,
   served at `grem.studio/admin/`
-- `widget/` — a tiny vanilla-TS script that renders the live feed into `index.php`'s
+- `widget/` — a tiny vanilla-TS script that renders the live feed into `index.html`'s
   "What's New?" section
 - `scripts/` — interactive command-line tools for the server operator to manage
   admin accounts (see [Managing admin accounts](#managing-admin-accounts))
@@ -173,13 +173,13 @@ npm install
 npm run build
 ```
 
-Then copy the build output into the site root so `index.php` can load it:
+Then copy the build output into the site root so `index.html` can load it:
 
 ```bash
 cp dist/feed-widget.js ../../feed-widget.js
 ```
 
-Re-run this copy step (and bump the `?v=` query string in `index.php`)
+Re-run this copy step (and bump the `?v=` query string in `index.html`)
 whenever the widget changes. The widget has no server-side dependency beyond
 the shared SpacetimeDB instance — it's a static file like `script.js` or
 `waves.js`.
