@@ -64,6 +64,12 @@ Start **A1** and the design portion of **B1** together. After A1, agents can wor
 
 Later frontend issues should consume these contracts: drag-and-drop/upload feedback, structured text editing, media placement, iframe resize controls, preview, and public rendering with accessible fallbacks. Keep those as a separate batch so the backend issues remain independently assignable.
 
+## Delegating through GitHub Actions
+
+The [Qwen editor issue workflow](https://github.com/blueoawn/grem.studio/blob/main/.github/workflows/qwen-editor-issue.yml) runs only through a manual Actions dispatch. Supply the number of one open child issue (A1–D3); the workflow checks that the issue was opened by the repository owner and has an editor-backend child title. It gives Qwen the issue body and repository files, then commits the resulting changes on an isolated `codex/` branch and opens a draft pull request for review. Parent issues are not accepted as dispatch targets.
+
+Before the first run, add `QWEN_API_KEY` as a repository Actions secret and ensure the repository permits Actions to create pull requests. The workflow fails with a clear error if the key is absent. It does not run when an issue is opened or assigned; assignment to another coding agent remains independent of Qwen dispatch. Review the generated PR and its test report before merging.
+
 ## Reference
 
 - [SpacetimeDB 1.12 incremental migrations](https://spacetimedb.com/docs/1.12.0/databases/incremental-migrations/) describes additive tables and compatibility reads/writes for existing data.
