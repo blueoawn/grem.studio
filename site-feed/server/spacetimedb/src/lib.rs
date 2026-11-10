@@ -1,7 +1,8 @@
 use spacetimedb::{ReducerContext, Table};
 
 mod accounts;
-mod serial;
+pub mod serial;
+mod serial_rich;
 pub mod serial_document;
 
 use accounts::require_admin;

@@ -7,6 +7,9 @@ use spacetimedb::{ReducerContext, Table};
 
 use crate::accounts::current_account;
 use crate::now_micros;
+use crate::serial_rich::{PublishedRichDocument, DraftRichDocument, rich_read, legacy_body_projection, draft_exists};
+
+const RESERVED_SLUGS: &[&str] = &["assets"];
 
 #[spacetimedb::table(name = serial_posts, public)]
 pub struct SerialPost {
@@ -20,10 +23,6 @@ pub struct SerialPost {
     /// Reading order: lower values come earlier in the serial.
     pub sort_order: u64,
 }
-
-// -- Helpers --
-
-const RESERVED_SLUGS: &[&str] = &["assets"];
 
 fn validate_slug(slug: &str) -> Result<String, String> {
     let slug = slug.trim().to_ascii_lowercase();
@@ -154,6 +153,139 @@ pub fn move_serial_post(ctx: &ReducerContext, slug: String, earlier: bool) -> Re
     ctx.db.serial_posts().slug().update(SerialPost { sort_order: neighbour_order, ..existing });
     ctx.db.serial_posts().slug().update(SerialPost { sort_order: own_order, ..neighbour });
     Ok(())
+}
+
+// -- Rich document reducers --
+
+#[spacetimedb::reducer]
+pub fn publish_rich_document(ctx: &ReducerContext, slug: String, document: String) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let slug = validate_slug(&slug)?;
+    
+    // Check that the legacy post exists
+    let legacy_post = ctx.db.serial_posts().slug().find(&slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    // Validate the document is not empty
+    if document.trim().is_empty() {
+        return Err("Document must not be empty".into());
+    }
+    
+    let timestamp = now_micros(ctx);
+    
+    // Insert or update the rich document
+    let rich_doc = ctx.db.published_rich_documents().slug().find(&slug);
+    if let Some(existing) = rich_doc {
+        ctx.db.published_rich_documents().slug().update(PublishedRichDocument {
+            document,
+            last_modified: timestamp,
+            modified_by: actor.username,
+            ..existing
+        });
+    } else {
+        ctx.db.published_rich_documents().insert(PublishedRichDocument {
+            slug,
+            document,
+            last_modified: timestamp,
+            modified_by: actor.username,
+        });
+    }
+    
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn save_draft(ctx: &ReducerContext, post_slug: String, draft_id: u64, document: String) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let legacy_post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
+        return Err("Only the author or an admin can save drafts for this post".into());
+    }
+    
+    // Validate the document is not empty
+    if document.trim().is_empty() {
+        return Err("Document must not be empty".into());
+    }
+    
+    let timestamp = now_micros(ctx);
+    
+    // Insert or update the draft
+    let existing_draft = ctx.db.draft_rich_documents()
+        .post_slug_draft_id()
+        .find(&post_slug, &draft_id);
+    
+    if let Some(existing) = existing_draft {
+        ctx.db.draft_rich_documents().post_slug_draft_id().update(DraftRichDocument {
+            document,
+            created_at: existing.created_at, // Keep original creation time
+            created_by: existing.created_by, // Keep original author
+            ..existing
+        });
+    } else {
+        ctx.db.draft_rich_documents().insert(DraftRichDocument {
+            post_slug,
+            draft_id,
+            document,
+            created_at: timestamp,
+            created_by: actor.username,
+        });
+    }
+    
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn discard_draft(ctx: &ReducerContext, post_slug: String, draft_id: u64) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let legacy_post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
+        return Err("Only the author or an admin can discard drafts for this post".into());
+    }
+    
+    if let Some(draft) = ctx.db.draft_rich_documents()
+        .post_slug_draft_id()
+        .find(&post_slug, &draft_id)
+    {
+        ctx.db.draft_rich_documents().post_slug_draft_id().delete(&post_slug, &draft_id);
+    }
+    
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn list_drafts_for_post(ctx: &ReducerContext, post_slug: String) -> Result<Vec<DraftRichDocument>, String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let legacy_post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
+        return Err("Only the author or an admin can list drafts for this post".into());
+    }
+    
+    let drafts: Vec<DraftRichDocument> = ctx.db.draft_rich_documents()
+        .post_slug_draft_id()
+        .filter(&post_slug)
+        .collect();
+    
+    Ok(drafts)
+}
+
+#[spacetimedb::reducer]
+pub fn list_published_rich_documents(ctx: &ReducerContext) -> Result<Vec<PublishedRichDocument>, String> {
+    // This is public - no authorization required
+    let documents: Vec<PublishedRichDocument> = ctx.db.published_rich_documents()
+        .slug()
+        .iter()
+        .collect();
+    
+    Ok(documents)
 }
 
 #[cfg(test)]
