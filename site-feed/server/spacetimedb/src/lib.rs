@@ -3,8 +3,15 @@ use spacetimedb::{ReducerContext, Table};
 mod accounts;
 mod serial;
 pub mod serial_document;
+mod media;
 
 use accounts::require_admin;
+
+pub use media::{create_upload_intent, upload_progress, finalize_upload, delete_upload_intent};
+pub use media::{my_media_assets};
+pub use media::{UploadIntent, MediaAsset};
+pub use media::{INTENT_TTL_MICROS, MAX_UPLOAD_BYTES, MAX_PUBLISHER_BYTES};
+pub use media::{require_publisher};
 
 // -- Tables --
 
