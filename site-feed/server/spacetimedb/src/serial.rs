@@ -155,7 +155,7 @@ pub fn legacy_body_projection(rich_document: &str) -> Result<String, String> {
 }
 
 /// Basic text extraction from JSON as fallback
-fn extract_text_from_json(json: &str) -> Option<String> {
+pub(crate) fn extract_text_from_json(json: &str) -> Option<String> {
     // Simple JSON parsing to extract text values
     let json = json.trim();
     if json.starts_with('{') && json.ends_with('}') {
@@ -384,7 +384,7 @@ pub fn list_published_rich_documents(ctx: &ReducerContext) -> Result<Vec<Publish
 
 #[cfg(test)]
 mod tests {
-    use super::{can_change_post, move_target, validate_slug};
+    use super::{can_change_post, extract_text_from_json, legacy_body_projection, move_target, validate_slug, SerialDocumentV1};
     use spacetimedb::Table;
 
     #[test]
@@ -411,5 +411,48 @@ mod tests {
         assert_eq!(move_target(2, 3, false), None);
         assert_eq!(move_target(1, 3, true), Some(0));
         assert_eq!(move_target(1, 3, false), Some(2));
+    }
+
+    #[test]
+    fn legacy_body_projection_returns_plain_text_from_rich_document() {
+        let doc = SerialDocumentV1::from_json(r#"{"version":1,"nodes":[{"type":"paragraph","id":"p1","runs":[{"text":"Hello world"}]}]}"#).unwrap();
+        let json = doc.to_json().unwrap();
+        let projected = legacy_body_projection(&json).unwrap();
+        assert_eq!(projected, "Hello world");
+    }
+
+    #[test]
+    fn legacy_body_projection_falls_back_to_json_extraction() {
+        let json = r#"{"document":"plain text content"}"#;
+        let projected = legacy_body_projection(json).unwrap();
+        assert_eq!(projected, "plain text content");
+    }
+
+    #[test]
+    fn extract_text_from_json_finds_document_field() {
+        let json = r#"{"version":1,"document":"text here","other":"value"}"#;
+        assert_eq!(extract_text_from_json(json), Some("text here".to_string()));
+    }
+
+    #[test]
+    fn extract_text_from_json_returns_none_for_invalid_json() {
+        assert_eq!(extract_text_from_json("not json"), None);
+        assert_eq!(extract_text_from_json(r#"{"other":"value"}"#), None);
+    }
+
+    #[test]
+    fn legacy_body_projection_handles_multiline_rich_document() {
+        let doc = SerialDocumentV1::from_json(r#"{"version":1,"nodes":[{"type":"paragraph","id":"p1","runs":[{"text":"First line"}]},{"type":"paragraph","id":"p2","runs":[{"text":"Second line"}]}]}"#).unwrap();
+        let json = doc.to_json().unwrap();
+        let projected = legacy_body_projection(&json).unwrap();
+        assert!(projected.contains("First line"));
+        assert!(projected.contains("Second line"));
+    }
+
+    #[test]
+    fn legacy_body_projection_strips_json_structure() {
+        let json = r#"{"version":1,"nodes":[{"type":"paragraph","id":"p1","runs":[{"text":"Only text","bold":true,"italic":false}]}]}"#;
+        let projected = legacy_body_projection(json).unwrap();
+        assert_eq!(projected, "Only text");
     }
 }
