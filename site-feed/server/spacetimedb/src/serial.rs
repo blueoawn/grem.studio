@@ -7,10 +7,13 @@ use spacetimedb::{ReducerContext, Table};
 
 use crate::accounts::current_account;
 use crate::now_micros;
-use crate::serial_rich::{PublishedRichDocument, DraftRichDocument, rich_read, legacy_body_projection, draft_exists};
+use crate::serial_document::{SerialDocumentV1, DocumentError};
 
 const RESERVED_SLUGS: &[&str] = &["assets"];
 
+// -- Tables --
+
+/// Legacy posts: kept for backward compatibility. Public for read access.
 #[spacetimedb::table(name = serial_posts, public)]
 pub struct SerialPost {
     #[primary_key]
@@ -22,6 +25,27 @@ pub struct SerialPost {
     pub published_at: u64,
     /// Reading order: lower values come earlier in the serial.
     pub sort_order: u64,
+}
+
+/// Published rich documents, keyed by post slug. Public for read access.
+#[spacetimedb::table(name = published_rich_documents, public)]
+pub struct PublishedRichDocument {
+    #[primary_key]
+    pub slug: String,
+    pub document: String,
+    pub last_modified: u64,
+    pub modified_by: String,
+}
+
+/// Private draft documents, keyed by (post_slug, draft_id). Not public - access controlled.
+#[spacetimedb::table(name = draft_rich_documents)]
+pub struct DraftRichDocument {
+    #[primary_key]
+    pub post_slug: String,
+    pub draft_id: u64,
+    pub document: String,
+    pub created_at: u64,
+    pub created_by: String,
 }
 
 fn validate_slug(slug: &str) -> Result<String, String> {
@@ -87,6 +111,75 @@ fn move_target(position: usize, len: usize, earlier: bool) -> Option<usize> {
     } else {
         Some(position + 1).filter(|target| *target < len)
     }
+}
+
+/// Read a post, preferring rich document if available, falling back to legacy body.
+/// Returns (title, body, has_rich_document).
+pub fn rich_read(ctx: &ReducerContext, slug: &str) -> Result<(String, String, bool), String> {
+    let slug = slug.trim().to_ascii_lowercase();
+    
+    // Check for rich document first
+    if let Some(rich_doc) = ctx.db.published_rich_documents().slug().find(&slug) {
+        // Try to parse as SerialDocumentV1 and extract plain text
+        if let Ok(doc) = SerialDocumentV1::from_json(&rich_doc.document) {
+            // Return the document slug as title, plain text as body
+            let plain_text = doc.plain_text();
+            return Ok((rich_doc.slug.clone(), plain_text, true));
+        } else {
+            // If parsing fails, return the raw document
+            return Ok((rich_doc.slug.clone(), rich_doc.document.clone(), true));
+        }
+    }
+    
+    // Fall back to legacy post
+    let post = ctx.db.serial_posts().slug().find(&slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    Ok((post.title, post.body, false))
+}
+
+/// Project a rich document to plain text for legacy clients.
+/// This extracts text content from rich JSON using SerialDocumentV1.
+pub fn legacy_body_projection(rich_document: &str) -> Result<String, String> {
+    match SerialDocumentV1::from_json(rich_document) {
+        Ok(doc) => Ok(doc.plain_text()),
+        Err(e) => {
+            // If parsing fails, attempt basic extraction or return original
+            // For backward compatibility, try to extract text fields from JSON
+            if let Some(text) = extract_text_from_json(rich_document) {
+                Ok(text)
+            } else {
+                Err(format!("Failed to project rich document to plain text: {}", e))
+            }
+        }
+    }
+}
+
+/// Basic text extraction from JSON as fallback
+fn extract_text_from_json(json: &str) -> Option<String> {
+    // Simple JSON parsing to extract text values
+    let json = json.trim();
+    if json.starts_with('{') && json.ends_with('}') {
+        // Try to extract "document" field or text fields
+        if let Some(doc_start) = json.find("\"document\"") {
+            if let Some(colon) = json[doc_start..].find(':') {
+                let val_start = doc_start + colon + 1;
+                let val = json[val_start..].trim_start();
+                if val.starts_with('"') {
+                    let val_end = val[1..].find('"')?;
+                    return Some(val[1..val_end + 1].to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Check if a draft exists for a post
+pub fn draft_exists(ctx: &ReducerContext, post_slug: &str, draft_id: u64) -> bool {
+    ctx.db.draft_rich_documents()
+        .post_slug_draft_id()
+        .find(&post_slug, &draft_id)
+        .is_some()
 }
 
 // -- Reducers --
@@ -269,9 +362,10 @@ pub fn list_drafts_for_post(ctx: &ReducerContext, post_slug: String) -> Result<V
         return Err("Only the author or an admin can list drafts for this post".into());
     }
     
+    // Collect all drafts for this post by iterating and filtering
     let drafts: Vec<DraftRichDocument> = ctx.db.draft_rich_documents()
-        .post_slug_draft_id()
-        .filter(&post_slug)
+        .iter()
+        .filter(|d| d.post_slug == post_slug)
         .collect();
     
     Ok(drafts)
@@ -291,6 +385,7 @@ pub fn list_published_rich_documents(ctx: &ReducerContext) -> Result<Vec<Publish
 #[cfg(test)]
 mod tests {
     use super::{can_change_post, move_target, validate_slug};
+    use spacetimedb::Table;
 
     #[test]
     fn accepts_a_route_safe_slug() {
