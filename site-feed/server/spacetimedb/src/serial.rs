@@ -5,7 +5,7 @@
 
 use spacetimedb::{ReducerContext, Table};
 
-use crate::accounts::current_account;
+use crate::accounts::{current_account, require_admin};
 use crate::now_micros;
 use crate::serial_document::SerialDocumentV1;
 
@@ -46,6 +46,30 @@ pub struct DraftRichDocument {
     pub document: String,
     pub created_at: u64,
     pub created_by: String,
+}
+
+/// Revision snapshots for serial posts. Immutable snapshots that can be restored.
+/// Public for read access by authorized users.
+#[spacetimedb::table(name = serial_revisions, public)]
+pub struct SerialRevision {
+    #[primary_key]
+    pub id: u64,
+    /// The slug of the post this revision belongs to
+    pub slug: String,
+    /// The author who made the revision
+    pub author: String,
+    /// Timestamp of the revision (micros since Unix epoch)
+    pub timestamp: u64,
+    /// Revision number (incremented on each edit/restore)
+    pub revision: u64,
+    /// Title at the time of this revision
+    pub title: String,
+    /// Body/document at the time of this revision
+    pub body: String,
+    /// Whether this was a published revision
+    pub is_published: bool,
+    /// Optional parent revision ID for history graph
+    pub parent_revision_id: Option<u64>,
 }
 
 fn validate_slug(slug: &str) -> Result<String, String> {
@@ -102,6 +126,36 @@ fn find_changeable_post(ctx: &ReducerContext, slug: &str) -> Result<SerialPost, 
         return Err("Only the author or an admin can change this post".into());
     }
     Ok(post)
+}
+
+/// Get the latest revision number for a slug
+fn get_latest_revision(ctx: &ReducerContext, slug: &str) -> u64 {
+    ctx.db.serial_revisions()
+        .iter()
+        .filter(|r| r.slug == slug)
+        .map(|r| r.revision)
+        .max()
+        .unwrap_or(0)
+}
+
+/// Get the latest revision ID for a slug
+fn get_latest_revision_id(ctx: &ReducerContext, slug: &str) -> Option<u64> {
+    ctx.db.serial_revisions()
+        .iter()
+        .filter(|r| r.slug == slug)
+        .max_by_key(|r| r.revision)
+        .map(|r| r.id)
+}
+
+/// Check if the caller is authorized to restore a revision
+fn can_restore_revision(ctx: &ReducerContext, slug: &str) -> Result<Actor, String> {
+    let actor = require_actor(ctx)?;
+    // Admins can restore any revision, authors can restore their own
+    let post = find_post(ctx, &slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can restore revisions".into());
+    }
+    Ok(actor)
 }
 
 /// Index of the post to swap with, or None when the post is already at that end.
@@ -240,6 +294,24 @@ pub fn edit_serial_post(ctx: &ReducerContext, slug: String, title: String, body:
     let existing = find_changeable_post(ctx, &slug)?;
     let title = validate_text(&title, "Title", 150)?;
     let body = validate_text(&body, "Body", 10_000)?;
+    
+    // Insert a snapshot before overwriting
+    let timestamp = now_micros(ctx);
+    let latest_revision = get_latest_revision(ctx, &existing.slug);
+    let parent_revision_id = get_latest_revision_id(ctx, &existing.slug);
+    
+    ctx.db.serial_revisions().insert(SerialRevision {
+        id: 0,
+        slug: existing.slug.clone(),
+        author: existing.created_by.clone(),
+        timestamp,
+        revision: latest_revision + 1,
+        title: existing.title.clone(),
+        body: existing.body.clone(),
+        is_published: existing.published_at > 0,
+        parent_revision_id,
+    });
+    
     ctx.db.serial_posts().slug().update(SerialPost { title, body, ..existing });
     Ok(())
 }
@@ -274,6 +346,63 @@ pub fn move_serial_post(ctx: &ReducerContext, slug: String, earlier: bool) -> Re
     let (own_order, neighbour_order) = (existing.sort_order, neighbour.sort_order);
     ctx.db.serial_posts().slug().update(SerialPost { sort_order: neighbour_order, ..existing });
     ctx.db.serial_posts().slug().update(SerialPost { sort_order: own_order, ..neighbour });
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn restore_serial_post(ctx: &ReducerContext, slug: String, revision_id: u64, expected_revision: u64) -> Result<(), String> {
+    let actor = can_restore_revision(ctx, &slug)?;
+    let slug = validate_slug(&slug)?;
+    
+    // Find the revision to restore
+    let revision = ctx.db.serial_revisions()
+        .iter()
+        .find(|r| r.id == revision_id && r.slug == slug)
+        .ok_or_else(|| "Revision not found".to_string())?;
+    
+    // Validate expected revision matches the target revision
+    if revision.revision != expected_revision {
+        return Err(format!(
+            "Revision mismatch: expected revision {}, but revision {} exists",
+            expected_revision, revision.revision
+        ));
+    }
+    
+    // Validate that we're not restoring to a newer revision
+    let current_revision = get_latest_revision(ctx, &slug);
+    if revision.revision > current_revision {
+        return Err(format!(
+            "Cannot restore to revision {} because it's newer than the current revision {}",
+            revision.revision, current_revision
+        ));
+    }
+    
+    let timestamp = now_micros(ctx);
+    let new_revision = current_revision + 1;
+    
+    // Insert a new revision with the restored content
+    ctx.db.serial_revisions().insert(SerialRevision {
+        id: 0,
+        slug: slug.clone(),
+        author: actor.username,
+        timestamp,
+        revision: new_revision,
+        title: revision.title.clone(),
+        body: revision.body.clone(),
+        is_published: revision.is_published,
+        parent_revision_id: Some(revision.id),
+    });
+    
+    // Update the serial_posts with the restored content
+    let existing_post = ctx.db.serial_posts().slug().find(&slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    ctx.db.serial_posts().slug().update(SerialPost {
+        title: revision.title.clone(),
+        body: revision.body.clone(),
+        ..existing_post
+    });
+    
     Ok(())
 }
 
@@ -412,6 +541,70 @@ pub fn list_published_rich_documents(ctx: &ReducerContext) -> Result<(), String>
     
     // Store documents in a temporary table or return via event
     // For now, just acknowledge the call
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn list_revisions_for_post(ctx: &ReducerContext, post_slug: String) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let legacy_post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
+        return Err("Only the author or an admin can list revisions for this post".into());
+    }
+    
+    // Collect all revisions for this post by iterating and filtering
+    let _revisions: Vec<SerialRevision> = ctx.db.serial_revisions()
+        .iter()
+        .filter(|r| r.slug == post_slug)
+        .collect();
+    
+    // Store revisions in a temporary table or return via event
+    // For now, just acknowledge the call
+    Ok(())
+}
+
+/// Prune old revisions based on retention policy
+/// Retention: keep revisions for 90 days or up to 100 revisions per slug
+#[spacetimedb::reducer]
+pub fn prune_old_revisions(ctx: &ReducerContext) -> Result<(), String> {
+    require_admin(ctx)?;
+    
+    let now = now_micros(ctx);
+    let retention_days = 90u64;
+    let retention_micros = retention_days * 24 * 60 * 60 * 1_000_000;
+    let max_revisions_per_slug = 100;
+    
+    // Group revisions by slug
+    let mut revisions_by_slug: std::collections::HashMap<String, Vec<SerialRevision>> = std::collections::HashMap::new();
+    for revision in ctx.db.serial_revisions().iter() {
+        revisions_by_slug.entry(revision.slug.clone()).or_default().push(revision);
+    }
+    
+    // For each slug, prune old and excess revisions
+    for (_slug, mut revisions) in revisions_by_slug {
+        // Sort by revision number (descending) to keep newest
+        revisions.sort_by(|a, b| b.revision.cmp(&a.revision));
+        
+        // Keep only revisions within retention period and within max count
+        let mut kept_count = 0;
+        for revision in revisions {
+            let should_keep = 
+                // Within retention period
+                (now - revision.timestamp) <= retention_micros
+                // Or within max count
+                && kept_count < max_revisions_per_slug;
+            
+            if !should_keep {
+                ctx.db.serial_revisions().delete(revision);
+            } else {
+                kept_count += 1;
+            }
+        }
+    }
+    
     Ok(())
 }
 
@@ -659,5 +852,23 @@ mod tests {
         // (this is tested by legacy_body_projection which extracts plain text)
         let projected = legacy_body_projection(&json).unwrap();
         assert!(projected.contains("Rich content"));
+    }
+    
+    #[test]
+    fn can_change_post_allows_admin() {
+        // Admins can change any post
+        assert!(can_change_post(true, "admin", "author"));
+    }
+    
+    #[test]
+    fn can_change_post_allows_author() {
+        // Authors can change their own posts
+        assert!(can_change_post(false, "author", "author"));
+    }
+    
+    #[test]
+    fn can_change_post_denies_other_users() {
+        // Other users cannot change posts
+        assert!(!can_change_post(false, "other", "author"));
     }
 }
