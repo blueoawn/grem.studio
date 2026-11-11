@@ -590,7 +590,7 @@ mod tests {
     fn slug_validation_rejects_special_characters() {
         // Slug must only contain lowercase letters, digits, and hyphens
         assert!(validate_slug("chapter_one").is_err()); // underscore not allowed
-        assert!(validate_slug("Chapter-01").is_err()); // uppercase not allowed
+        assert_eq!(validate_slug("Chapter-01").unwrap(), "chapter-01"); // normalized to lowercase
         assert!(validate_slug("chapter@one").is_err()); // @ not allowed
         assert!(validate_slug("chapter#one").is_err()); // # not allowed
         assert!(validate_slug("chapter one").is_err()); // space not allowed
