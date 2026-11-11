@@ -540,6 +540,13 @@ pub fn list_published_rich_documents(_ctx: &ReducerContext) -> Result<(), String
     Ok(())
 }
 
+/// List available draft revisions for the caller's posts (author/admin only).
+/// This reducer returns no data - clients should query the my_draft_revisions view.
+#[spacetimedb::reducer]
+pub fn list_draft_revisions(_ctx: &ReducerContext) -> Result<(), String> {
+    Ok(())
+}
+
 /// Compatibility acknowledgement. History results are available through my_serial_revisions.
 #[spacetimedb::reducer]
 pub fn list_revisions_for_post(ctx: &ReducerContext, post_slug: String) -> Result<(), String> {

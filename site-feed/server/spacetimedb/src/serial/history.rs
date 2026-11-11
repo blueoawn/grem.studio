@@ -11,6 +11,31 @@ use super::{
 use crate::accounts::{accounts__view, require_admin, sessions__view};
 use crate::now_micros;
 
+// -- Draft revision tables --
+
+/// Private: draft revision snapshots for preview access.
+/// Each row represents a specific revision of a draft document.
+#[spacetimedb::table(name = draft_revisions)]
+pub struct DraftRevision {
+    #[primary_key]
+    #[auto_inc]
+    pub id: u64,
+    #[index(btree)]
+    pub slug: String,
+    pub revision_id: u64,
+    pub document: String,
+    pub created_at: u64,
+    pub author: String,
+}
+
+/// Private: tracks which draft revisions have been revoked/expired.
+#[spacetimedb::table(name = draft_revision_revocations)]
+pub struct DraftRevisionRevocation {
+    #[primary_key]
+    pub revision_id: u64,
+    pub revoked_at: u64,
+}
+
 const DAY_SECONDS: u64 = 24 * 60 * 60;
 const RETENTION_MICROS: u64 = 90 * DAY_SECONDS * 1_000_000;
 const MAX_REVISIONS: usize = 100;
@@ -399,6 +424,169 @@ fn insert_revision(ctx: &ReducerContext, revision: SerialRevision, content: Revi
             scheduled_at: Duration::from_secs(DAY_SECONDS).into(),
         });
     }
+}
+
+/// Preview access metadata for a draft revision.
+#[derive(SpacetimeType)]
+pub struct DraftPreviewInfo {
+    pub id: u64,
+    pub slug: String,
+    pub revision_id: u64,
+    pub created_at: u64,
+    pub author: String,
+}
+
+/// List available draft revisions for a slug (author/admin only).
+/// This is a placeholder - the actual query should be done directly on the draft_revisions table.
+#[spacetimedb::view(public, name = my_draft_revisions)]
+fn my_draft_revisions(_ctx: &ViewContext) -> Vec<DraftPreviewInfo> {
+    // This view is a placeholder - in practice, clients should query the draft_revisions table directly
+    // with appropriate filters based on the caller's identity
+    Vec::new()
+}
+
+/// Get a specific draft revision by ID (author/admin only).
+/// Returns the revision document or an error.
+pub fn get_draft_revision(
+    ctx: &ReducerContext,
+    revision_id: u64,
+) -> Result<DraftRevision, String> {
+    let actor = require_actor(ctx)?;
+    let revision = ctx
+        .db
+        .draft_revisions()
+        .id()
+        .find(revision_id)
+        .ok_or_else(|| "Draft revision not found".to_string())?;
+    
+    // Check authorization: must be the author or an admin
+    let posts = ctx.db.serial_posts();
+    let post = posts
+        .slug()
+        .find(&revision.slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Not authorized to access this draft revision".into());
+    }
+    
+    // Check if the revision has been revoked
+    let revocations = ctx.db.draft_revision_revocations();
+    if revocations.revision_id().find(revision_id).is_some() {
+        return Err("Draft revision has been revoked".into());
+    }
+    
+    Ok(revision)
+}
+
+/// Get a specific draft revision by slug and revision_id (author/admin only).
+/// Returns the revision document or an error.
+pub fn get_draft_revision_by_slug(
+    ctx: &ReducerContext,
+    slug: &str,
+    revision_id: u64,
+) -> Result<DraftRevision, String> {
+    let actor = require_actor(ctx)?;
+    let revision = ctx
+        .db
+        .draft_revisions()
+        .slug()
+        .filter(slug)
+        .filter_map(|r| if r.revision_id == revision_id { Some(r) } else { None })
+        .next()
+        .ok_or_else(|| "Draft revision not found".to_string())?;
+    
+    // Check authorization: must be the author or an admin
+    let posts = ctx.db.serial_posts();
+    let post = posts
+        .slug()
+        .find(&revision.slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Not authorized to access this draft revision".into());
+    }
+    
+    // Check if the revision has been revoked
+    let revocations = ctx.db.draft_revision_revocations();
+    if revocations.revision_id().find(revision_id).is_some() {
+        return Err("Draft revision has been revoked".into());
+    }
+    
+    Ok(revision)
+}
+
+/// Revoke a draft revision (author/admin only).
+/// Once revoked, the revision cannot be accessed via preview.
+pub fn revoke_draft_revision(
+    ctx: &ReducerContext,
+    revision_id: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let revision = ctx
+        .db
+        .draft_revisions()
+        .id()
+        .find(revision_id)
+        .ok_or_else(|| "Draft revision not found".to_string())?;
+    
+    // Check authorization: must be the author or an admin
+    let posts = ctx.db.serial_posts();
+    let post = posts
+        .slug()
+        .find(&revision.slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Not authorized to revoke this draft revision".into());
+    }
+    
+    // Check if already revoked
+    let revocations = ctx.db.draft_revision_revocations();
+    if revocations.revision_id().find(revision_id).is_some() {
+        return Err("Draft revision has already been revoked".into());
+    }
+    
+    let now = now_micros(ctx);
+    ctx.db.draft_revision_revocations().insert(DraftRevisionRevocation {
+        revision_id,
+        revoked_at: now,
+    });
+    
+    Ok(())
+}
+
+/// Restore a revoked draft revision (author/admin only).
+pub fn restore_draft_revision(
+    ctx: &ReducerContext,
+    revision_id: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let revision = ctx
+        .db
+        .draft_revisions()
+        .id()
+        .find(revision_id)
+        .ok_or_else(|| "Draft revision not found".to_string())?;
+    
+    // Check authorization: must be the author or an admin
+    let posts = ctx.db.serial_posts();
+    let post = posts
+        .slug()
+        .find(&revision.slug)
+        .ok_or_else(|| "Post not found".to_string())?;
+    
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Not authorized to restore this draft revision".into());
+    }
+    
+    let revocations = ctx.db.draft_revision_revocations();
+    if revocations.revision_id().find(revision_id).is_none() {
+        return Err("Draft revision is not revoked".into());
+    }
+    
+    ctx.db.draft_revision_revocations().revision_id().delete(revision_id);
+    Ok(())
 }
 
 pub(super) fn record_revision(
