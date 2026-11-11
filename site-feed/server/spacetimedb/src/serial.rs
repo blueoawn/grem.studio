@@ -54,6 +54,26 @@ pub struct DraftRichDocument {
     pub created_by: String,
 }
 
+/// Revision metadata for rich documents, keyed by (post_slug, revision_number).
+/// Used for optimistic concurrency control and revision tracking.
+#[spacetimedb::table(name = serial_document_revisions)]
+pub struct SerialDocumentRevision {
+    #[primary_key]
+    pub post_slug: String,
+    #[primary_key]
+    pub revision_number: u64,
+    /// The snapshot ID (hash) of the document at this revision
+    pub snapshot_id: String,
+    /// The author who created this revision
+    pub created_by: String,
+    /// Timestamp of this revision
+    pub created_at: u64,
+    /// The expected revision number for optimistic concurrency control
+    pub expected_revision: Option<u64>,
+    /// Whether this is a draft revision
+    pub is_draft: bool,
+}
+
 fn validate_slug(slug: &str) -> Result<String, String> {
     let slug = slug.trim().to_ascii_lowercase();
     if slug.is_empty() || slug.len() > 80 {
@@ -107,6 +127,30 @@ fn find_changeable_post(ctx: &ReducerContext, actor: &Actor, slug: &str) -> Resu
         return Err("Only the author or an admin can change this post".into());
     }
     Ok(post)
+}
+
+/// Find a post and its latest revision for editing.
+/// Returns (post, latest_revision_number, expected_next_revision).
+/// The expected_next_revision is what the client should use for optimistic concurrency control.
+fn find_changeable_post_with_revision(ctx: &ReducerContext, slug: &str) -> Result<(SerialPost, u64, u64), String> {
+    let actor = require_actor(ctx)?;
+    let post = find_post(ctx, slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can change this post".into());
+    }
+    
+    // Find the latest revision for this post
+    let latest_revision = ctx.db.serial_document_revisions()
+        .iter()
+        .filter(|r| r.post_slug == post.slug)
+        .max_by_key(|r| r.revision_number);
+    
+    let (latest_revision_number, expected_next_revision) = match latest_revision {
+        Some(rev) => (rev.revision_number, rev.revision_number + 1),
+        None => (0, 1), // First revision
+    };
+    
+    Ok((post, latest_revision_number, expected_next_revision))
 }
 
 /// Index of the post to swap with, or None when the post is already at that end.
@@ -214,6 +258,35 @@ pub fn draft_exists(ctx: &ReducerContext, post_slug: &str, draft_id: u64) -> boo
     ctx.db.draft_rich_documents()
         .iter()
         .any(|d| d.post_slug == post_slug && d.draft_id == draft_id)
+}
+
+/// Atomically update the legacy body projection from a rich document.
+/// This ensures that legacy clients can still read plain text.
+/// Returns the plain text projection.
+pub fn update_serial_post_plain_projection(
+    ctx: &ReducerContext,
+    slug: &str,
+    rich_document: &str,
+) -> Result<String, String> {
+    // Extract plain text from the rich document
+    let plain_text = legacy_body_projection(rich_document)?;
+    
+    // Update the legacy post's body field
+    if let Some(post) = ctx.db.serial_posts().slug().find(slug) {
+        ctx.db.serial_posts().slug().update(SerialPost {
+            body: plain_text.clone(),
+            ..post
+        });
+    }
+    
+    Ok(plain_text)
+}
+
+/// Validate that a document is a valid SerialDocumentV1
+pub fn validate_serial_document(document: &str) -> Result<(), String> {
+    SerialDocumentV1::from_json(document)
+        .map(|_| ())
+        .map_err(|e| format!("Invalid document: {}", e))
 }
 
 // -- Reducers --
@@ -409,6 +482,380 @@ pub fn list_drafts_for_post(ctx: &ReducerContext, post_slug: String) -> Result<(
     
     // Store drafts in a temporary table or return via event
     // For now, just acknowledge the call
+    Ok(())
+}
+
+// -- Revision-aware draft and publication reducers --
+
+/// Create a new draft for a post.
+/// This initializes the revision history for the post if it doesn't exist.
+#[spacetimedb::reducer]
+pub fn create_draft(
+    ctx: &ReducerContext,
+    post_slug: String,
+    document: String,
+    expected_revision: Option<u64>,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists
+    let post = find_post(ctx, &post_slug)?;
+    
+    // Check authorization
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can create drafts for this post".into());
+    }
+    
+    // Validate the document
+    validate_serial_document(&document)?;
+    
+    // Check expected revision for optimistic concurrency control
+    let (latest_revision, expected_next) = {
+        let latest = ctx.db.serial_document_revisions()
+            .iter()
+            .filter(|r| r.post_slug == post_slug)
+            .max_by_key(|r| r.revision_number);
+        
+        match latest {
+            Some(rev) => (rev.revision_number, rev.revision_number + 1),
+            None => (0, 1),
+        }
+    };
+    
+    // If expected_revision is provided, verify it matches the latest
+    if let Some(exp_rev) = expected_revision {
+        if exp_rev != latest_revision {
+            return Err(format!(
+                "Conflicting edit: expected revision {}, but latest is {}",
+                exp_rev, latest_revision
+            ));
+        }
+    }
+    
+    // Generate a snapshot ID (hash of the document)
+    let snapshot_id = format!("{:x}", md5::compute(document.as_bytes()));
+    
+    // Create the initial revision
+    let timestamp = now_micros(ctx);
+    ctx.db.serial_document_revisions().insert(SerialDocumentRevision {
+        post_slug: post_slug.clone(),
+        revision_number: 1,
+        snapshot_id,
+        created_by: actor.username,
+        created_at: timestamp,
+        expected_revision: None, // First revision has no expected revision
+        is_draft: true,
+    });
+    
+    // Create the draft document
+    ctx.db.draft_rich_documents().insert(DraftRichDocument {
+        post_slug: post_slug.clone(),
+        draft_id: 1, // First draft
+        document,
+        created_at: timestamp,
+        created_by: actor.username,
+    });
+    
+    // Update the legacy body projection
+    update_serial_post_plain_projection(ctx, &post_slug, document)?;
+    
+    Ok(())
+}
+
+/// Save changes to an existing draft.
+/// Enforces optimistic concurrency control with expected_revision.
+#[spacetimedb::reducer]
+pub fn save_draft(
+    ctx: &ReducerContext,
+    post_slug: String,
+    draft_id: u64,
+    document: String,
+    expected_revision: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can save drafts for this post".into());
+    }
+    
+    // Validate the document
+    validate_serial_document(&document)?;
+    
+    // Find the current revision
+    let current_revision = ctx.db.serial_document_revisions()
+        .iter()
+        .filter(|r| r.post_slug == post_slug)
+        .max_by_key(|r| r.revision_number);
+    
+    // Check if this is a new draft or an existing one
+    let is_new_draft = current_revision.is_none() || draft_id == 1;
+    
+    if let Some(rev) = current_revision {
+        // Optimistic concurrency check
+        if expected_revision != rev.revision_number {
+            return Err(format!(
+                "Conflicting edit: expected revision {}, but latest is {}",
+                expected_revision, rev.revision_number
+            ));
+        }
+    }
+    
+    // Generate a snapshot ID
+    let snapshot_id = format!("{:x}", md5::compute(document.as_bytes()));
+    
+    // Update or create the revision
+    let timestamp = now_micros(ctx);
+    if let Some(rev) = current_revision {
+        ctx.db.serial_document_revisions().delete(&rev);
+    }
+    
+    ctx.db.serial_document_revisions().insert(SerialDocumentRevision {
+        post_slug: post_slug.clone(),
+        revision_number: expected_revision + 1,
+        snapshot_id,
+        created_by: actor.username,
+        created_at: timestamp,
+        expected_revision: Some(expected_revision),
+        is_draft: true,
+    });
+    
+    // Update the draft document
+    if let Some(existing_draft) = ctx.db.draft_rich_documents()
+        .iter()
+        .find(|d| d.post_slug == post_slug && d.draft_id == draft_id)
+    {
+        ctx.db.draft_rich_documents().delete(&existing_draft);
+    }
+    
+    ctx.db.draft_rich_documents().insert(DraftRichDocument {
+        post_slug: post_slug.clone(),
+        draft_id,
+        document,
+        created_at: if current_revision.is_some() { 
+            existing_draft.created_at 
+        } else { 
+            timestamp 
+        },
+        created_by: actor.username,
+    });
+    
+    // Update the legacy body projection
+    update_serial_post_plain_projection(ctx, &post_slug, document)?;
+    
+    Ok(())
+}
+
+/// Discard a draft and its associated revision.
+#[spacetimedb::reducer]
+pub fn discard_draft(
+    ctx: &ReducerContext,
+    post_slug: String,
+    draft_id: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can discard drafts for this post".into());
+    }
+    
+    // Find and delete the draft
+    if let Some(draft) = ctx.db.draft_rich_documents()
+        .iter()
+        .find(|d| d.post_slug == post_slug && d.draft_id == draft_id)
+    {
+        ctx.db.draft_rich_documents().delete(&draft);
+    }
+    
+    // If this is the only draft (draft_id == 1), also remove the revision
+    // This allows for a fresh start if the draft is discarded
+    if draft_id == 1 {
+        let revision = ctx.db.serial_document_revisions()
+            .iter()
+            .find(|r| r.post_slug == post_slug && r.revision_number == 1);
+        
+        if let Some(rev) = revision {
+            ctx.db.serial_document_revisions().delete(&rev);
+        }
+    }
+    
+    Ok(())
+}
+
+/// Publish a draft as the new published version.
+/// This updates both the published rich document and the revision history.
+#[spacetimedb::reducer]
+pub fn publish_draft(
+    ctx: &ReducerContext,
+    post_slug: String,
+    draft_id: u64,
+    expected_revision: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can publish drafts for this post".into());
+    }
+    
+    // Find the draft
+    let draft = ctx.db.draft_rich_documents()
+        .iter()
+        .find(|d| d.post_slug == post_slug && d.draft_id == draft_id)
+        .ok_or_else(|| "Draft not found".to_string())?;
+    
+    // Validate the document
+    validate_serial_document(&draft.document)?;
+    
+    // Check optimistic concurrency
+    let current_revision = ctx.db.serial_document_revisions()
+        .iter()
+        .filter(|r| r.post_slug == post_slug)
+        .max_by_key(|r| r.revision_number);
+    
+    if let Some(rev) = current_revision {
+        if expected_revision != rev.revision_number {
+            return Err(format!(
+                "Conflicting edit: expected revision {}, but latest is {}",
+                expected_revision, rev.revision_number
+            ));
+        }
+    }
+    
+    // Generate a snapshot ID
+    let snapshot_id = format!("{:x}", md5::compute(draft.document.as_bytes()));
+    
+    // Update the revision history
+    let timestamp = now_micros(ctx);
+    let new_revision_number = current_revision.map_or(1, |r| r.revision_number + 1);
+    
+    if let Some(rev) = current_revision {
+        ctx.db.serial_document_revisions().delete(&rev);
+    }
+    
+    ctx.db.serial_document_revisions().insert(SerialDocumentRevision {
+        post_slug: post_slug.clone(),
+        revision_number: new_revision_number,
+        snapshot_id,
+        created_by: actor.username,
+        created_at: timestamp,
+        expected_revision: Some(expected_revision),
+        is_draft: false, // Published, not a draft
+    });
+    
+    // Update the published rich document
+    let existing = ctx.db.published_rich_documents().slug().find(&post_slug);
+    if let Some(pub_doc) = existing {
+        ctx.db.published_rich_documents().slug().update(PublishedRichDocument {
+            document: draft.document.clone(),
+            last_modified: timestamp,
+            modified_by: actor.username,
+            ..pub_doc
+        });
+    } else {
+        ctx.db.published_rich_documents().insert(PublishedRichDocument {
+            slug: post_slug.clone(),
+            document: draft.document.clone(),
+            last_modified: timestamp,
+            modified_by: actor.username,
+        });
+    }
+    
+    // Update the legacy body projection
+    update_serial_post_plain_projection(ctx, &post_slug, &draft.document)?;
+    
+    // Delete the draft after successful publication
+    ctx.db.draft_rich_documents().delete(&draft);
+    
+    Ok(())
+}
+
+/// Update an existing published document (not from a draft).
+/// This is for direct updates to the published version.
+#[spacetimedb::reducer]
+pub fn update_published_document(
+    ctx: &ReducerContext,
+    post_slug: String,
+    document: String,
+    expected_revision: u64,
+) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post_slug = validate_slug(&post_slug)?;
+    
+    // Check that the legacy post exists and is changeable
+    let post = find_post(ctx, &post_slug)?;
+    if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
+        return Err("Only the author or an admin can update published documents".into());
+    }
+    
+    // Validate the document
+    validate_serial_document(&document)?;
+    
+    // Check optimistic concurrency
+    let current_revision = ctx.db.serial_document_revisions()
+        .iter()
+        .filter(|r| r.post_slug == post_slug)
+        .max_by_key(|r| r.revision_number);
+    
+    if let Some(rev) = &current_revision {
+        if expected_revision != rev.revision_number {
+            return Err(format!(
+                "Conflicting edit: expected revision {}, but latest is {}",
+                expected_revision, rev.revision_number
+            ));
+        }
+    }
+    
+    // Generate a snapshot ID
+    let snapshot_id = format!("{:x}", md5::compute(document.as_bytes()));
+    
+    // Update the revision history
+    let timestamp = now_micros(ctx);
+    let new_revision_number = current_revision.map_or(1, |r| r.revision_number + 1);
+    
+    if let Some(rev) = current_revision {
+        ctx.db.serial_document_revisions().delete(&rev);
+    }
+    
+    ctx.db.serial_document_revisions().insert(SerialDocumentRevision {
+        post_slug: post_slug.clone(),
+        revision_number: new_revision_number,
+        snapshot_id,
+        created_by: actor.username,
+        created_at: timestamp,
+        expected_revision: current_revision.map(|r| r.revision_number),
+        is_draft: false,
+    });
+    
+    // Update the published rich document
+    let existing = ctx.db.published_rich_documents().slug().find(&post_slug);
+    if let Some(pub_doc) = existing {
+        ctx.db.published_rich_documents().slug().update(PublishedRichDocument {
+            document,
+            last_modified: timestamp,
+            modified_by: actor.username,
+            ..pub_doc
+        });
+    } else {
+        ctx.db.published_rich_documents().insert(PublishedRichDocument {
+            slug: post_slug.clone(),
+            document,
+            last_modified: timestamp,
+            modified_by: actor.username,
+        });
+    }
+    
+    // Update the legacy body projection
+    update_serial_post_plain_projection(ctx, &post_slug, document)?;
+    
     Ok(())
 }
 
