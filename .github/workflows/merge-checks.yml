@@ -1,0 +1,99 @@
+name: Merge checks
+
+# Basic gate for every pull request into main: formatting, linting, and syntax.
+# The compile/test/wasm build lives in rust.yml ("Rust module checks"), which also
+# runs on every pull request. To make these checks block merges, require the
+# "merge-checks" and "rust" status checks in a branch ruleset for main
+# (see docs/agents.md, "CI and merge gate").
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-checks-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-fmt:
+    name: rustfmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site-feed/server/spacetimedb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  rust-clippy:
+    name: clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: site-feed/server/spacetimedb
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      # Deny-by-default lints (clippy::correctness) fail the job. Other warnings are
+      # reported as annotations but do not block yet; see docs/agents.md.
+      - run: cargo clippy --locked --all-targets
+
+  scripts:
+    name: script syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check JavaScript module syntax
+        run: |
+          set -euo pipefail
+          files=$(git ls-files '*.mjs' '*.js' | grep -v '/node_modules/' || true)
+          for f in $files; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+      - name: Check shell script syntax
+        run: |
+          set -euo pipefail
+          for f in $(git ls-files '*.sh'); do
+            echo "bash -n $f"
+            bash -n "$f"
+          done
+
+  merge-checks:
+    name: merge-checks
+    if: always()
+    needs: [rust-fmt, rust-clippy, scripts]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require every check to pass
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for r in $RESULTS; do
+            if [ "$r" != "success" ]; then
+              echo "::error::A merge check did not succeed ($r)."
+              exit 1
+            fi
+          done

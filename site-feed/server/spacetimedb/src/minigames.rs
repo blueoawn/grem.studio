@@ -238,7 +238,10 @@ pub(crate) fn validate_publication(
     document: &str,
 ) -> Result<SerialDocumentV1, String> {
     if document.len() > MAX_DOCUMENT_BYTES as usize {
-        return Err(format!("Document exceeds maximum size of {} bytes", MAX_DOCUMENT_BYTES));
+        return Err(format!(
+            "Document exceeds maximum size of {} bytes",
+            MAX_DOCUMENT_BYTES
+        ));
     }
     let document =
         SerialDocumentV1::from_json(document).map_err(|err| format!("Invalid document: {err}"))?;
