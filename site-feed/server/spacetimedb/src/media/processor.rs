@@ -81,6 +81,14 @@ fn sniff_content_type(path: &Path) -> Result<String, String> {
     let mut buffer = [0u8; 16];
     file.read_exact(&mut buffer)
         .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+
+    // ISO BMFF starts with a four-byte box size, then the ftyp box and brand.
+    // A start code alone is not an MP4 container signature.
+    if buffer[4..8] == *b"ftyp"
+        && matches!(&buffer[8..12], b"mp42" | b"isom" | b"avc1")
+    {
+        return Ok("video/mp4".to_string());
+    }
     
     // Check for common file signatures (magic numbers)
     let content_type = match &buffer[0..4] {
@@ -99,15 +107,6 @@ fn sniff_content_type(path: &Path) -> Result<String, String> {
         [0x00, 0x00, 0x01, 0x01] => "image/x-icon",
         [0x46, 0x4C, 0x56, 0x01] => "video/x-flv", // FLV
         [0x1A, 0x45, 0xDF, 0xA3] => "video/webm", // WebM
-        [0x00, 0x00, 0x00, 0x01] => "video/mp4", // MP4 (sometimes)
-        [0x66, 0x74, 0x79, 0x70] => {
-            // ftyp box - MP4
-            if buffer[4..8] == *b"mp42" || buffer[4..8] == *b"isom" || buffer[4..8] == *b"avc1" {
-                "video/mp4"
-            } else {
-                "application/octet-stream"
-            }
-        }
         _ => "application/octet-stream",
     };
     
@@ -244,23 +243,16 @@ mod tests {
 
     #[test]
     fn test_sniff_content_type_mp4() {
-        // MP4 files start with ftyp box
-        let buffer = [
-            0x00, 0x00, 0x00, 0x00, // size (dummy)
-            0x66, 0x74, 0x79, 0x70, // ftyp
-            0x69, 0x73, 0x6F, 0x6D, // isom
-        ];
-        let content_type = match &buffer[0..4] {
-            [0x66, 0x74, 0x79, 0x70] => {
-                if buffer[4..8] == *b"mp42" || buffer[4..8] == *b"isom" || buffer[4..8] == *b"avc1" {
-                    "video/mp4"
-                } else {
-                    "application/octet-stream"
-                }
-            }
-            _ => "application/octet-stream",
-        };
-        assert_eq!(content_type, "video/mp4");
+        let path = std::env::temp_dir().join(format!("sniff-mp4-{}.bin", std::process::id()));
+        for brand in [b"isom", b"mp42", b"avc1"] {
+            let mut header = *b"\0\0\0\x18ftypisom\0\0\0\0";
+            header[8..12].copy_from_slice(brand);
+            fs::write(&path, header).unwrap();
+            assert_eq!(sniff_content_type(&path).unwrap(), "video/mp4");
+        }
+        fs::write(&path, b"\0\0\0\x01invalid-data").unwrap();
+        assert_eq!(sniff_content_type(&path).unwrap(), "application/octet-stream");
+        fs::remove_file(path).unwrap();
     }
 
     #[test]
