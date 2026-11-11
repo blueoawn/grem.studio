@@ -1277,7 +1277,7 @@ mod tests {
     fn round_trip_game_embed_preserves_dimensions() {
         let doc = r#"{
             "version":1,
-            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":320,"title":"Test","params":[{"key":"level","value":"3"}]}
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":320,"title":"Test","params":[{"key":"level","value":"3"}]}]
         }"#;
         let first = SerialDocumentV1::from_json(doc).expect("should parse");
         if let DocumentNode::GameEmbed(g) = &first.nodes[0] {
