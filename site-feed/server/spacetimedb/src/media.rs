@@ -349,25 +349,49 @@ pub fn update_asset_status(
 }
 
 /// Process an asset (calls the processor module).
-/// This is a placeholder that would be implemented in the processor module.
+/// This calls the processor module to validate and prepare the asset.
 pub fn process_asset(
     ctx: &ReducerContext,
     asset_id: String,
-    _temp_path: String,
+    temp_path: String,
 ) -> Result<(), String> {
-    // This would call the processor module in a full implementation
-    // For now, just mark as ready without processing
+    // Find the asset
     let asset = ctx.db.media_assets().asset_id().find(&asset_id)
         .ok_or_else(|| "Asset not found".to_string())?;
     
-    let now = now_micros(ctx);
-    ctx.db.media_assets().asset_id().update(MediaAsset {
-        status: ASSET_STATUS_READY,
-        processed_at: Some(now),
-        ..asset
-    });
+    // Call the processor module
+    let mut asset_to_process = asset.clone();
+    let temp_path_ref = std::path::Path::new(&temp_path);
     
-    Ok(())
+    match crate::media::processor::process_asset(&mut asset_to_process, temp_path_ref) {
+        Ok(()) => {
+            // Update the asset with the processed metadata
+            let now = now_micros(ctx);
+            ctx.db.media_assets().asset_id().update(MediaAsset {
+                status: asset_to_process.status,
+                processed_at: Some(now),
+                width: asset_to_process.width,
+                height: asset_to_process.height,
+                duration_seconds: asset_to_process.duration_seconds,
+                variants: asset_to_process.variants,
+                content_hash: asset_to_process.content_hash,
+                ..asset_to_process
+            });
+            
+            Ok(())
+        }
+        Err(e) => {
+            // Update status to failed
+            let now = now_micros(ctx);
+            ctx.db.media_assets().asset_id().update(MediaAsset {
+                status: ASSET_STATUS_FAILED,
+                processed_at: Some(now),
+                ..asset
+            });
+            
+            Err(e)
+        }
+    }
 }
 
 #[cfg(test)]

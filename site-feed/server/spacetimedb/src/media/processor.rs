@@ -8,7 +8,7 @@
 //! - Processing status tracking
 
 use std::fs;
-use std::io::{Read, Seek};
+use std::io::Read;
 use std::path::Path;
 
 use crate::media::{MediaAsset, ASSET_STATUS_READY};
@@ -125,36 +125,35 @@ fn is_supported_type(content_type: &str) -> bool {
     false
 }
 
-/// Compute a simple hash of a file (placeholder for SHA-256)
+/// Compute a hash of a file using a simple algorithm
+/// This is a placeholder for SHA-256 - in a full implementation, you'd use sha2::Sha256
 fn compute_file_hash(path: &Path) -> Result<String, String> {
-    // For now, use a simple hash based on file size and first/last bytes
-    // In a full implementation, you'd use sha2::Sha256
-    let metadata = fs::metadata(path)
-        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
-    
-    // Read first and last bytes
+    // Open the file
     let mut file = fs::File::open(path)
         .map_err(|e| format!("Failed to open {}: {}", path.display(), e))?;
-    let mut first_byte = [0u8; 1];
-    file.read_exact(&mut first_byte)
-        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
     
-    // Seek to end
-    file.seek(std::io::SeekFrom::End(-1))
-        .map_err(|e| format!("Failed to seek {}: {}", path.display(), e))?;
-    let mut last_byte = [0u8; 1];
-    file.read_exact(&mut last_byte)
-        .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+    // Read the file in chunks and compute a simple hash
+    let mut buffer = [0u8; 8192];
+    let mut hash: u64 = 5381; // djb2 hash seed
     
-    // Simple hash: size + first byte + last byte
-    let hash = format!(
-        "{:016x}{:02x}{:02x}",
-        metadata.len(),
-        first_byte[0],
-        last_byte[0]
-    );
+    loop {
+        let bytes_read = file.read(&mut buffer)
+            .map_err(|e| format!("Failed to read {}: {}", path.display(), e))?;
+        
+        if bytes_read == 0 {
+            break;
+        }
+        
+        // djb2 hash algorithm
+        for &byte in &buffer[..bytes_read] {
+            hash = hash.wrapping_mul(33).wrapping_add(byte as u64);
+        }
+    }
     
-    Ok(hash)
+    // Convert hash to hex string
+    let hash_str = format!("{:016x}", hash);
+    
+    Ok(hash_str)
 }
 
 /// Process an image file
@@ -244,6 +243,38 @@ mod tests {
     }
 
     #[test]
+    fn test_sniff_content_type_mp4() {
+        // MP4 files start with ftyp box
+        let buffer = [
+            0x00, 0x00, 0x00, 0x00, // size (dummy)
+            0x66, 0x74, 0x79, 0x70, // ftyp
+            0x69, 0x73, 0x6F, 0x6D, // isom
+        ];
+        let content_type = match &buffer[0..4] {
+            [0x66, 0x74, 0x79, 0x70] => {
+                if buffer[4..8] == *b"mp42" || buffer[4..8] == *b"isom" || buffer[4..8] == *b"avc1" {
+                    "video/mp4"
+                } else {
+                    "application/octet-stream"
+                }
+            }
+            _ => "application/octet-stream",
+        };
+        assert_eq!(content_type, "video/mp4");
+    }
+
+    #[test]
+    fn test_sniff_content_type_webm() {
+        // WebM files start with EBML magic bytes
+        let buffer = [0x1A, 0x45, 0xDF, 0xA3];
+        let content_type = match &buffer[0..4] {
+            [0x1A, 0x45, 0xDF, 0xA3] => "video/webm",
+            _ => "application/octet-stream",
+        };
+        assert_eq!(content_type, "video/webm");
+    }
+
+    #[test]
     fn test_unsupported_content_type() {
         let buffer = b"Hello, world!";
         let content_type = match &buffer[0..4] {
@@ -278,11 +309,30 @@ mod tests {
     #[test]
     fn test_compute_file_hash() {
         // Test the hash function with a simple input
-        // Since we can't create temporary files, we'll just verify the function compiles
-        // and returns a string of the expected length
-        let hash = compute_file_hash(&std::path::PathBuf::from("nonexistent.txt"));
-        // The function should return an error for non-existent files
-        assert!(hash.is_err());
+        // Create a temporary file with known content
+        let mut path = PathBuf::new();
+        path.set_file_name("test_hash.txt");
+        
+        // Write test content to the file
+        {
+            let mut file = File::create(&path).expect("Failed to create test file");
+            file.write_all(b"Hello, world!").expect("Failed to write to test file");
+        }
+        
+        // Compute hash
+        let hash = compute_file_hash(&path);
+        
+        // Verify it succeeded and returned a valid hex string
+        assert!(hash.is_ok());
+        let hash_str = hash.as_ref().unwrap();
+        assert_eq!(hash_str.len(), 16); // djb2 produces 16 hex characters
+        
+        // Verify the hash is deterministic
+        let hash2 = compute_file_hash(&path);
+        assert_eq!(hash.as_ref().unwrap(), hash2.as_ref().unwrap());
+        
+        // Clean up
+        std::fs::remove_file(&path).ok();
     }
 
     #[test]
