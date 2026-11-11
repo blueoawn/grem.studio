@@ -590,8 +590,8 @@ fn normalize_node(
             normalize_identifier(IdKind::NodeId, &mut g.id, MAX_NODE_ID_BYTES)?;
             register_node_id(&g.id, &mut walk.seen)?;
             normalize_identifier(IdKind::EmbedId, &mut g.embed_id, MAX_EMBED_ID_BYTES)?;
-            check_dimension("width", &mut Some(g.width))?;
-            check_dimension("height", &mut Some(g.height))?;
+            check_dimension_non_optional("width", &mut g.width)?;
+            check_dimension_non_optional("height", &mut g.height)?;
             normalize_required_text("title", &mut g.title)?;
             if g.params.len() > MAX_EMBED_PARAMS {
                 return Err(DocumentError::TooManyEmbedParams {
@@ -827,6 +827,18 @@ fn check_dimension(field: &str, value: &mut Option<u16>) -> Result<(), DocumentE
                 max: MAX_DIMENSION_UNITS as i128,
             });
         }
+    }
+    Ok(())
+}
+
+fn check_dimension_non_optional(field: &str, value: &mut u16) -> Result<(), DocumentError> {
+    if *value < MIN_DIMENSION_UNITS || *value > MAX_DIMENSION_UNITS {
+        return Err(DocumentError::OutOfRange {
+            field: field.to_string(),
+            value: *value as i128,
+            min: MIN_DIMENSION_UNITS as i128,
+            max: MAX_DIMENSION_UNITS as i128,
+        });
     }
     Ok(())
 }
@@ -1204,6 +1216,75 @@ mod tests {
             SerialDocumentV1::from_json(too_big),
             Err(DocumentError::OutOfRange { field, .. }) if field == "width"
         ));
+    }
+
+    #[test]
+    fn rejects_game_embed_dimension_out_of_range() {
+        let zero = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":0,"height":320,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(zero),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "width"
+        ));
+        let too_big = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":4097,"height":320,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(too_big),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "width"
+        ));
+        let zero_h = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":0,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(zero_h),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "height"
+        ));
+        let too_big_h = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":4097,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(too_big_h),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "height"
+        ));
+    }
+
+    #[test]
+    fn accepts_game_embed_dimension_at_bounds() {
+        for (w, h) in [(1, 1), (1, 4096), (4096, 1), (4096, 4096)] {
+            let doc = format!(
+                r#"{{"version":1,"nodes":[{{"type":"gameEmbed","id":"g1","embed_id":"game1","width":{w},"height":{h},"title":"Test","params":[]}}]}}"#
+            );
+            assert!(SerialDocumentV1::from_json(&doc).is_ok(), "dimensions {w}x{h} should be accepted");
+        }
+    }
+
+    #[test]
+    fn round_trip_game_embed_preserves_dimensions() {
+        let doc = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":320,"title":"Test","params":[{"key":"level","value":"3"}]}
+        }"#;
+        let first = SerialDocumentV1::from_json(doc).expect("should parse");
+        if let DocumentNode::GameEmbed(g) = &first.nodes[0] {
+            assert_eq!(g.width, 480);
+            assert_eq!(g.height, 320);
+        } else {
+            panic!("expected gameEmbed");
+        }
+        let serialized = first.to_json().expect("should serialize");
+        let second = SerialDocumentV1::from_json(&serialized).expect("should re-parse");
+        if let DocumentNode::GameEmbed(g) = &second.nodes[0] {
+            assert_eq!(g.width, 480);
+            assert_eq!(g.height, 320);
+        } else {
+            panic!("expected gameEmbed");
+        }
     }
 
     #[test]
