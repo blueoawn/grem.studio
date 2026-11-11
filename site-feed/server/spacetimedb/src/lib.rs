@@ -4,6 +4,7 @@ mod accounts;
 pub mod serial;
 pub mod serial_document;
 pub mod media;
+mod minigames;
 
 use accounts::require_admin;
 

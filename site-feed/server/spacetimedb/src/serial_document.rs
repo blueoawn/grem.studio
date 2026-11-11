@@ -183,6 +183,7 @@ pub struct Video {
 
 /// An allowlisted key/value parameter for a game embed.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EmbedParam {
     pub key: String,
     pub value: String,
@@ -190,6 +191,7 @@ pub struct EmbedParam {
 
 /// A sized reference to an approved minigame (by registry id, never a raw URL/iframe).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct GameEmbed {
     pub id: String,
     /// Approved registry id, resolved to an origin/path policy elsewhere.
