@@ -1,18 +1,20 @@
 use spacetimedb::{ReducerContext, Table};
 
 mod accounts;
+pub mod media;
 pub mod serial;
 pub mod serial_document;
-pub mod media;
 mod minigames;
 
 use accounts::require_admin;
 
 pub use media::{create_upload_intent, upload_progress, finalize_upload, delete_upload_intent};
-pub use media::{my_media_assets};
+pub use media::{my_media_assets, process_asset, get_pending_assets, update_asset_status};
 pub use media::{UploadIntent, MediaAsset};
 pub use media::{INTENT_TTL_MICROS, MAX_UPLOAD_BYTES, MAX_PUBLISHER_BYTES};
-pub use media::{require_publisher};
+pub use media::{require_publisher, ASSET_STATUS_PENDING, ASSET_STATUS_PROCESSING, ASSET_STATUS_READY, ASSET_STATUS_FAILED};
+
+pub use media::worker::{process_pending_assets, expire_partial_uploads, cleanup_failed_assets};
 
 // -- Tables --
 

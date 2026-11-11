@@ -20,14 +20,29 @@ CREATE INDEX upload_intents_publisher_idx
     ON upload_intents (publisher);
 
 -- media_assets is private; access it through the my_media_assets view.
+-- Processing status: 0=pending, 1=processing, 2=ready, 3=failed
 CREATE TABLE media_assets (
     asset_id TEXT PRIMARY KEY,
     publisher BLOB NOT NULL,
     content_type TEXT NOT NULL,
     byte_size BIGINT NOT NULL,
     storage_key TEXT NOT NULL,
-    created_at BIGINT NOT NULL
+    status INTEGER NOT NULL DEFAULT 0,
+    created_at BIGINT NOT NULL,
+    processed_at BIGINT,
+    -- Image dimensions (width x height)
+    width INTEGER,
+    height INTEGER,
+    -- Video metadata
+    duration_seconds INTEGER,
+    -- Variants (JSON array of {path, content_type, byte_size})
+    variants TEXT,
+    -- Content hash (SHA-256 hex)
+    content_hash TEXT
 );
 
 CREATE INDEX media_assets_publisher_idx
     ON media_assets (publisher);
+
+CREATE INDEX media_assets_status_idx
+    ON media_assets (status);
