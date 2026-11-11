@@ -1265,6 +1265,15 @@ mod tests {
     }
 
     #[test]
+    fn accepts_game_embed_dimension_intermediate_extremes() {
+        // Test intermediate values near bounds to ensure validation is correct
+        let doc = format!(
+            r#"{{"version":1,"nodes":[{{"type":"gameEmbed","id":"g1","embed_id":"game1","width":4095,"height":2,"title":"Test","params":[]}}]}}"#
+        );
+        assert!(SerialDocumentV1::from_json(&doc).is_ok(), "dimensions 4095x2 should be accepted");
+    }
+
+    #[test]
     fn round_trip_game_embed_preserves_dimensions() {
         let doc = r#"{
             "version":1,
