@@ -78,6 +78,35 @@ non-nullable column) requires `spacetime publish --delete-data`, which wipes
 `accounts`. Re-run the admin-creation step below after any such
 republish.
 
+#### Serial revision history
+
+Publish the Rust module to the existing database. SpacetimeDB creates the
+private history, snapshot, revision-head, and expiry tables from the module
+schema. Existing chapters, published documents, drafts, and accounts are
+preserved. Keep `SITE_FEED_OWNER_IDENTITY` set when building. If an earlier
+revision-history prototype was already published, rehearse an incremental
+migration for its existing table before deploying this schema.
+
+Publishers and admins can subscribe to `my_serial_revisions` for permitted
+snapshot IDs and `my_serial_revision_heads` for current chapter revisions. Regenerate
+bindings for clients that use the new views and restore reducer.
+Call `restore_serial_post(slug, snapshot_id, expected_revision)` with the
+current chapter revision. A successful restore appends a new revision linked
+to its source and applies the source to the draft or published document as
+appropriate. The first edit to existing content captures a baseline if that
+content has no retained history.
+
+History keeps up to 100 revisions and 16 MiB of snapshot content per chapter.
+Revisions become unavailable for restore after 90 days and daily cleanup
+removes expired rows. The chapter revision survives cleanup. Chapter deletion
+removes its documents and history so a reused slug starts with clean state.
+
+Run the live reducer tests with `node --test site-feed/scripts/test-serial-revisions.mjs`
+from the repository root against a local SpacetimeDB 1.12 instance. Set
+`SITE_FEED_TEST_URL` for a nondefault local port. Set `SITE_FEED_TEST_BASE` to
+the `site-feed/server/spacetimedb` module directory from the base branch to
+exercise an in-place upgrade of a database seeded with legacy data.
+
 ### 4. Create your first admin account
 
 Use the interactive script (see [Managing admin accounts](#managing-admin-accounts)
