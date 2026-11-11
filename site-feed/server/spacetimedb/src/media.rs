@@ -6,8 +6,7 @@
 
 use spacetimedb::{ReducerContext, Table};
 
-use crate::accounts::Session;
-use crate::accounts::{accounts, accounts__view, sessions, sessions__view};
+use crate::accounts::{sessions, sessions__view, accounts, accounts__view};
 use crate::now_micros;
 
 // -- Constants --
@@ -88,27 +87,22 @@ pub fn require_publisher(ctx: &ReducerContext) -> Result<(), String> {
 }
 
 /// The logged-in account making this call, if any (admin or publisher).
-pub fn current_account(ctx: &ReducerContext) -> Option<spacetimedb::Identity> {
+pub fn current_account(ctx: &ReducerContext) -> Option<crate::accounts::Account> {
     let session = ctx.db.sessions().identity().find(&ctx.sender)?;
-    ctx.db.accounts().username().find(&session.username)?;
-    Some(ctx.sender)
+    ctx.db.accounts().username().find(&session.username)
 }
 
 /// Revoke all active sessions and pending intents for a publisher.
 /// Also removes pending uploads that belong to the publisher.
 pub fn revoke_publisher(ctx: &ReducerContext, publisher_identity: &spacetimedb::Identity) {
     // Delete all sessions for this identity
-    let sessions: Vec<Session> = ctx
-        .db
-        .sessions()
-        .iter()
-        .filter(|session| &session.identity == publisher_identity)
-        .collect();
-    for session in sessions {
+    // Since identity is the primary key, there can be at most one session per identity
+    if let Some(session) = ctx.db.sessions().identity().find(publisher_identity) {
         ctx.db.sessions().identity().delete(&session.identity);
     }
 
     // Delete pending upload intents for this identity
+    // This uses the publisher index which is efficient
     let intents: Vec<UploadIntent> =
         ctx.db.upload_intents().publisher().filter(publisher_identity).collect();
     for intent in intents {
@@ -216,8 +210,22 @@ pub fn finalize_upload(
         return Err("Invalid uploaded byte count".into());
     }
 
+    // Validate storage_key is non-empty and well-formed
+    if storage_key.is_empty() {
+        return Err("Storage key must not be empty".into());
+    }
+    // Reject paths that could lead to directory traversal or other issues
+    if storage_key.contains("..") || storage_key.starts_with('/') || storage_key.contains('\\') {
+        return Err("Storage key must be a simple non-empty path".into());
+    }
+
     // Create the media asset (only if not already exists)
-    if ctx.db.media_assets().asset_id().find(&intent.asset_id).is_none() {
+    if let Some(existing) = ctx.db.media_assets().asset_id().find(&intent.asset_id) {
+        // Validate that the existing asset belongs to the same publisher
+        if existing.publisher != intent.publisher {
+            return Err("Asset ID already in use by another publisher".into());
+        }
+    } else {
         ctx.db.media_assets().insert(MediaAsset {
             asset_id: intent.asset_id.clone(),
             publisher: ctx.sender,
@@ -252,17 +260,21 @@ pub fn delete_upload_intent(ctx: &ReducerContext, intent_key: String) -> Result<
 /// List all media assets owned by the caller (publisher only).
 #[spacetimedb::view(name = my_media_assets, public)]
 pub fn my_media_assets(ctx: &spacetimedb::ViewContext) -> Vec<MediaAsset> {
-    let account_is_admin = ctx
+    let account = ctx
         .db
         .sessions()
         .identity()
         .find(ctx.sender)
-        .and_then(|session| ctx.db.accounts().username().find(&session.username))
-        .is_some_and(|account| account.is_admin);
-    if account_is_admin {
+        .and_then(|session| ctx.db.accounts().username().find(&session.username));
+    let is_admin = account.as_ref().is_some_and(|a| a.is_admin);
+    if is_admin {
         return Vec::new();
     }
-    ctx.db.media_assets().publisher().filter(&ctx.sender).collect()
+    let publisher_identity = account.map(|_| ctx.sender);
+    if let Some(pid) = publisher_identity {
+        return ctx.db.media_assets().publisher().filter(&pid).collect();
+    }
+    Vec::new()
 }
 
 #[cfg(test)]

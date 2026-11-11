@@ -6,7 +6,7 @@
 
 CREATE TABLE upload_intents (
     intent_key TEXT PRIMARY KEY,
-    publisher TEXT NOT NULL,
+    publisher BLOB NOT NULL,
     asset_id TEXT NOT NULL,
     filename TEXT NOT NULL,
     content_type TEXT NOT NULL,
@@ -22,7 +22,7 @@ CREATE INDEX upload_intents_publisher_idx
 -- media_assets is private; access it through the my_media_assets view.
 CREATE TABLE media_assets (
     asset_id TEXT PRIMARY KEY,
-    publisher TEXT NOT NULL,
+    publisher BLOB NOT NULL,
     content_type TEXT NOT NULL,
     byte_size BIGINT NOT NULL,
     storage_key TEXT NOT NULL,

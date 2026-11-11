@@ -3,7 +3,7 @@ use spacetimedb::{ReducerContext, Table};
 mod accounts;
 mod serial;
 pub mod serial_document;
-mod media;
+pub mod media;
 
 use accounts::require_admin;
 
