@@ -107,6 +107,11 @@ from the repository root against a local SpacetimeDB 1.12 instance. Set
 the `site-feed/server/spacetimedb` module directory from the base branch to
 exercise an in-place upgrade of a database seeded with legacy data.
 
+#### Minigame embeds
+
+The [minigame registry contract](docs/minigame-embed-registry.md) covers admin
+approval, reader fallback, and the dedicated static HTTPS host.
+
 ### 4. Create your first admin account
 
 Use the interactive script (see [Managing admin accounts](#managing-admin-accounts)

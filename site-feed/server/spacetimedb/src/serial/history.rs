@@ -232,7 +232,7 @@ fn can_access_history(actor: &Actor, post: &SerialPost) -> bool {
     can_change_post(actor.is_admin, &actor.username, &post.created_by)
 }
 
-fn head_revision(ctx: &ReducerContext, slug: &String) -> u64 {
+pub(super) fn head_revision(ctx: &ReducerContext, slug: &String) -> u64 {
     ctx.db
         .serial_revision_heads()
         .slug()
@@ -246,7 +246,7 @@ fn next_revision(current: u64) -> Result<u64, String> {
         .ok_or_else(|| "Chapter revision limit reached".into())
 }
 
-fn check_expected_revision(current: u64, expected: u64) -> Result<(), String> {
+pub(super) fn check_expected_revision(current: u64, expected: u64) -> Result<(), String> {
     if expected != current {
         return Err(format!(
             "Revision mismatch: expected {expected}, current revision is {current}"
@@ -455,6 +455,9 @@ pub fn restore_serial_post(
 
     match &snapshot.content {
         RevisionContent::Published(published) => {
+            if let Some(document) = &published.document {
+                super::validate_publication(ctx, document)?;
+            }
             ctx.db
                 .serial_posts()
                 .slug()
