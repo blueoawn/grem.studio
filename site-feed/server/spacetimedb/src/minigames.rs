@@ -7,8 +7,8 @@ use spacetimedb::{AnonymousViewContext, ReducerContext, SpacetimeType, Table, Vi
 use crate::accounts::{accounts, accounts__view, require_admin, sessions__view};
 use crate::now_micros;
 use crate::serial_document::{
-    DocumentNode, EmbedParam, GameEmbed, SerialDocumentV1, MAX_EMBED_ID_BYTES, MAX_EMBED_PARAMS,
-    MAX_EMBED_PARAM_KEY_BYTES, MAX_EMBED_PARAM_VALUE_BYTES,
+    DocumentNode, EmbedParam, GameEmbed, SerialDocumentV1, MAX_DOCUMENT_BYTES, MAX_EMBED_ID_BYTES,
+    MAX_EMBED_PARAMS, MAX_EMBED_PARAM_KEY_BYTES, MAX_EMBED_PARAM_VALUE_BYTES,
 };
 
 const GAME_ORIGIN: &str = "https://minigames.grem.studio";
@@ -237,6 +237,9 @@ pub(crate) fn validate_publication(
     ctx: &ReducerContext,
     document: &str,
 ) -> Result<SerialDocumentV1, String> {
+    if document.len() > MAX_DOCUMENT_BYTES as usize {
+        return Err(format!("Document exceeds maximum size of {} bytes", MAX_DOCUMENT_BYTES));
+    }
     let document =
         SerialDocumentV1::from_json(document).map_err(|err| format!("Invalid document: {err}"))?;
     visit_embeds(&document.nodes, &mut |embed| {

@@ -321,8 +321,13 @@ fn store_publication(
     let baseline_author = existing.as_ref().map_or_else(|| post.created_by.clone(), |row| row.modified_by.clone());
     let already_published = existing.is_some();
     let previous = PublishedSnapshot::from_post(&post, existing);
+    // When body is None, project plain text from the rich document to ensure
+    // the history snapshot has the correct body, not a potentially stale legacy body
+    let body_for_snapshot = body.clone().or_else(|| {
+        SerialDocumentV1::from_json(&document).ok().map(|doc| doc.plain_text())
+    }).unwrap_or_else(|| post.body.clone());
     let next = PublishedSnapshot {
-        body: body.clone().unwrap_or_else(|| post.body.clone()),
+        body: body_for_snapshot,
         document: Some(document.clone()),
         ..PublishedSnapshot::from_post(&post, None)
     };
@@ -471,7 +476,7 @@ pub fn save_draft_at_revision(
     let post = find_changeable_post(ctx, &actor, &post_slug)?;
     check_expected_revision(head_revision(ctx, &post.slug), expected_revision)?;
     find_draft(ctx, &post.slug, draft_id)?;
-    SerialDocumentV1::from_json(&document).map_err(|err| format!("Invalid document: {err}"))?;
+    validate_publication(ctx, &document)?;
     store_draft(ctx, post.slug, actor.username, draft_id, document)
 }
 
