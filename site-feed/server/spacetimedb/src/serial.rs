@@ -7,7 +7,13 @@ use spacetimedb::{ReducerContext, Table};
 
 use crate::accounts::current_account;
 use crate::now_micros;
-use crate::serial_document::SerialDocumentV1;
+use crate::serial_document::{SerialDocumentV1, MAX_DOCUMENT_BYTES};
+
+pub mod history;
+
+pub use history::{prune_old_revisions, restore_serial_post};
+
+use history::{clear_history, record_baseline, record_revision, DraftSnapshot, PublishedSnapshot, RevisionContent};
 
 const RESERVED_SLUGS: &[&str] = &["assets"];
 
@@ -95,8 +101,7 @@ fn find_post(ctx: &ReducerContext, slug: &str) -> Result<SerialPost, String> {
     ctx.db.serial_posts().slug().find(&slug).ok_or_else(|| "Post not found".to_string())
 }
 
-fn find_changeable_post(ctx: &ReducerContext, slug: &str) -> Result<SerialPost, String> {
-    let actor = require_actor(ctx)?;
+fn find_changeable_post(ctx: &ReducerContext, actor: &Actor, slug: &str) -> Result<SerialPost, String> {
     let post = find_post(ctx, slug)?;
     if !can_change_post(actor.is_admin, &actor.username, &post.created_by) {
         return Err("Only the author or an admin can change this post".into());
@@ -237,16 +242,26 @@ pub fn create_serial_post(ctx: &ReducerContext, slug: String, title: String, bod
 
 #[spacetimedb::reducer]
 pub fn edit_serial_post(ctx: &ReducerContext, slug: String, title: String, body: String) -> Result<(), String> {
-    let existing = find_changeable_post(ctx, &slug)?;
+    let actor = require_actor(ctx)?;
+    let existing = find_changeable_post(ctx, &actor, &slug)?;
     let title = validate_text(&title, "Title", 150)?;
     let body = validate_text(&body, "Body", 10_000)?;
+    let rich = ctx.db.published_rich_documents().slug().find(&existing.slug);
+    let previous = PublishedSnapshot::from_post(&existing, rich);
+    let next = PublishedSnapshot { title: title.clone(), body: body.clone(), document: previous.document.clone() };
+    record_baseline(ctx, &existing.slug, &existing.created_by, RevisionContent::Published(previous))?;
+    record_revision(ctx, &existing.slug, &actor.username, RevisionContent::Published(next))?;
     ctx.db.serial_posts().slug().update(SerialPost { title, body, ..existing });
     Ok(())
 }
 
 #[spacetimedb::reducer]
 pub fn delete_serial_post(ctx: &ReducerContext, slug: String) -> Result<(), String> {
-    let existing = find_changeable_post(ctx, &slug)?;
+    let actor = require_actor(ctx)?;
+    let existing = find_changeable_post(ctx, &actor, &slug)?;
+    clear_history(ctx, &existing.slug);
+    ctx.db.draft_rich_documents().post_slug().delete(&existing.slug);
+    ctx.db.published_rich_documents().slug().delete(&existing.slug);
     ctx.db.serial_posts().slug().delete(&existing.slug);
     Ok(())
 }
@@ -279,105 +294,99 @@ pub fn move_serial_post(ctx: &ReducerContext, slug: String, earlier: bool) -> Re
 
 // -- Rich document reducers --
 
-#[spacetimedb::reducer]
-pub fn publish_rich_document(ctx: &ReducerContext, slug: String, document: String) -> Result<(), String> {
-    let actor = require_actor(ctx)?;
-    let slug = validate_slug(&slug)?;
-    
-    // Check that the legacy post exists
-    let _legacy_post = ctx.db.serial_posts().slug().find(&slug)
-        .ok_or_else(|| "Post not found".to_string())?;
-    
-    // Validate the document is not empty
+fn validate_document_size(document: &str) -> Result<(), String> {
     if document.trim().is_empty() {
         return Err("Document must not be empty".into());
     }
-    
-    let timestamp = now_micros(ctx);
-    
-    // Insert or update the rich document
-    let rich_doc = ctx.db.published_rich_documents().slug().find(&slug);
-    if let Some(existing) = rich_doc {
-        ctx.db.published_rich_documents().slug().update(PublishedRichDocument {
-            document,
-            last_modified: timestamp,
-            modified_by: actor.username,
-            ..existing
-        });
-    } else {
-        ctx.db.published_rich_documents().insert(PublishedRichDocument {
-            slug,
-            document,
-            last_modified: timestamp,
-            modified_by: actor.username,
-        });
+    if document.len() > MAX_DOCUMENT_BYTES {
+        return Err(format!("Document must be at most {MAX_DOCUMENT_BYTES} bytes"));
     }
-    
+    Ok(())
+}
+
+#[spacetimedb::reducer]
+pub fn publish_rich_document(ctx: &ReducerContext, slug: String, document: String) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    let post = find_changeable_post(ctx, &actor, &slug)?;
+    validate_document_size(&document)?;
+
+    let documents = ctx.db.published_rich_documents();
+    let existing = documents.slug().find(&post.slug);
+    let baseline_author = existing.as_ref().map_or_else(|| post.created_by.clone(), |row| row.modified_by.clone());
+    let already_published = existing.is_some();
+    let previous = PublishedSnapshot::from_post(&post, existing);
+    let next = PublishedSnapshot {
+        document: Some(document.clone()),
+        ..PublishedSnapshot::from_post(&post, None)
+    };
+    record_baseline(ctx, &post.slug, &baseline_author, RevisionContent::Published(previous))?;
+    record_revision(ctx, &post.slug, &actor.username, RevisionContent::Published(next))?;
+
+    let rich = PublishedRichDocument {
+        slug: post.slug,
+        document,
+        last_modified: now_micros(ctx),
+        modified_by: actor.username,
+    };
+    if already_published {
+        documents.slug().update(rich);
+    } else {
+        documents.insert(rich);
+    }
     Ok(())
 }
 
 #[spacetimedb::reducer]
 pub fn save_draft(ctx: &ReducerContext, post_slug: String, draft_id: u64, document: String) -> Result<(), String> {
     let actor = require_actor(ctx)?;
-    let post_slug = validate_slug(&post_slug)?;
-    
-    // Check that the legacy post exists and is changeable
-    let legacy_post = find_post(ctx, &post_slug)?;
-    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
-        return Err("Only the author or an admin can save drafts for this post".into());
+    let post = find_changeable_post(ctx, &actor, &post_slug)?;
+    validate_document_size(&document)?;
+
+    let drafts = ctx.db.draft_rich_documents();
+    let previous = drafts.post_slug().find(&post.slug).map(DraftSnapshot::from);
+    if previous.as_ref().is_some_and(|draft| draft.draft_id != draft_id) {
+        return Err("Discard the current draft before saving a different draft ID".into());
     }
-    
-    // Validate the document is not empty
-    if document.trim().is_empty() {
-        return Err("Document must not be empty".into());
-    }
-    
-    let timestamp = now_micros(ctx);
-    
-    // Insert or update the draft
-    let existing_draft = ctx.db.draft_rich_documents()
-        .iter()
-        .find(|d| d.post_slug == post_slug && d.draft_id == draft_id);
-    
-    if let Some(existing) = existing_draft {
-        ctx.db.draft_rich_documents().insert(DraftRichDocument {
-            post_slug: existing.post_slug,
-            draft_id: existing.draft_id,
-            document,
-            created_at: existing.created_at, // Keep original creation time
-            created_by: existing.created_by, // Keep original author
-        });
-    } else {
-        ctx.db.draft_rich_documents().insert(DraftRichDocument {
-            post_slug,
+    let next = match &previous {
+        Some(draft) => DraftSnapshot {
             draft_id,
             document,
-            created_at: timestamp,
-            created_by: actor.username,
-        });
+            created_at: draft.created_at,
+            created_by: draft.created_by.clone(),
+        },
+        None => DraftSnapshot {
+            draft_id,
+            document,
+            created_at: now_micros(ctx),
+            created_by: actor.username.clone(),
+        },
+    };
+    let row = next.row(post.slug.clone());
+    let already_exists = previous.is_some();
+    if let Some(draft) = previous {
+        let baseline_author = draft.created_by.clone();
+        record_baseline(ctx, &post.slug, &baseline_author, RevisionContent::Draft(draft))?;
     }
-    
+    record_revision(ctx, &post.slug, &actor.username, RevisionContent::Draft(next))?;
+    if already_exists {
+        drafts.post_slug().update(row);
+    } else {
+        drafts.insert(row);
+    }
     Ok(())
 }
 
 #[spacetimedb::reducer]
 pub fn discard_draft(ctx: &ReducerContext, post_slug: String, draft_id: u64) -> Result<(), String> {
     let actor = require_actor(ctx)?;
-    let post_slug = validate_slug(&post_slug)?;
-    
-    // Check that the legacy post exists and is changeable
-    let legacy_post = find_post(ctx, &post_slug)?;
-    if !can_change_post(actor.is_admin, &actor.username, &legacy_post.created_by) {
-        return Err("Only the author or an admin can discard drafts for this post".into());
+    let post = find_changeable_post(ctx, &actor, &post_slug)?;
+    let drafts = ctx.db.draft_rich_documents();
+    if let Some(draft) = drafts.post_slug().find(&post.slug).filter(|row| row.draft_id == draft_id) {
+        let baseline_author = draft.created_by.clone();
+        record_baseline(ctx, &post.slug, &baseline_author, RevisionContent::Draft(draft.into()))?;
+        record_revision(ctx, &post.slug, &actor.username, RevisionContent::DiscardedDraft(draft_id))?;
+        drafts.post_slug().delete(&post.slug);
     }
-    
-    if let Some(draft) = ctx.db.draft_rich_documents()
-        .iter()
-        .find(|d| d.post_slug == post_slug && d.draft_id == draft_id)
-    {
-        ctx.db.draft_rich_documents().delete(draft);
-    }
-    
     Ok(())
 }
 
@@ -412,6 +421,14 @@ pub fn list_published_rich_documents(ctx: &ReducerContext) -> Result<(), String>
     
     // Store documents in a temporary table or return via event
     // For now, just acknowledge the call
+    Ok(())
+}
+
+/// Compatibility acknowledgement. History results are available through my_serial_revisions.
+#[spacetimedb::reducer]
+pub fn list_revisions_for_post(ctx: &ReducerContext, post_slug: String) -> Result<(), String> {
+    let actor = require_actor(ctx)?;
+    find_changeable_post(ctx, &actor, &post_slug)?;
     Ok(())
 }
 
@@ -659,5 +676,23 @@ mod tests {
         // (this is tested by legacy_body_projection which extracts plain text)
         let projected = legacy_body_projection(&json).unwrap();
         assert!(projected.contains("Rich content"));
+    }
+    
+    #[test]
+    fn can_change_post_allows_admin() {
+        // Admins can change any post
+        assert!(can_change_post(true, "admin", "author"));
+    }
+    
+    #[test]
+    fn can_change_post_allows_author() {
+        // Authors can change their own posts
+        assert!(can_change_post(false, "author", "author"));
+    }
+    
+    #[test]
+    fn can_change_post_denies_other_users() {
+        // Other users cannot change posts
+        assert!(!can_change_post(false, "other", "author"));
     }
 }
