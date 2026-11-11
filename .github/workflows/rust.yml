@@ -1,0 +1,21 @@
+name: Rust module checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: site-feed/server/spacetimedb
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo check --locked
+      - run: cargo test --locked
+      - run: cargo build --locked --target wasm32-unknown-unknown

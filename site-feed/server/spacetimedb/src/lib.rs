@@ -1,3 +1,6 @@
+#[cfg(all(test, not(target_arch = "wasm32")))]
+mod native_test_host;
+
 use spacetimedb::{ReducerContext, Table};
 
 mod accounts;
