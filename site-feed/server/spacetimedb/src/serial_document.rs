@@ -300,7 +300,11 @@ pub enum DocumentError {
     /// The document has no nodes.
     EmptyDocument,
     /// More nodes than allowed (top-level or total).
-    TooManyNodes { scope: NodeScope, count: usize, max: usize },
+    TooManyNodes {
+        scope: NodeScope,
+        count: usize,
+        max: usize,
+    },
     /// A node is nested deeper than [`MAX_PANEL_DEPTH`] via panels.
     PanelTooDeep { depth: usize, max: usize },
     /// A panel has no children.
@@ -308,7 +312,11 @@ pub enum DocumentError {
     /// A node id is used more than once in the document.
     DuplicateNodeId { id: String },
     /// A node/asset/embed/param identifier failed a rule.
-    InvalidIdentifier { kind: IdKind, value: String, reason: IdReason },
+    InvalidIdentifier {
+        kind: IdKind,
+        value: String,
+        reason: IdReason,
+    },
     /// A short text field (alt/caption/label/title/param value) failed a rule.
     InvalidTextField { field: String, reason: FieldReason },
     /// A text field contained an executable markup token from [`DENY_TOKENS`].
@@ -316,9 +324,17 @@ pub enum DocumentError {
     /// A paragraph / rotated-text node carries no text.
     EmptyBlock { node_id: String },
     /// A text block has more runs than [`MAX_RUNS_PER_BLOCK`].
-    TooManyRuns { node_id: String, count: usize, max: usize },
+    TooManyRuns {
+        node_id: String,
+        count: usize,
+        max: usize,
+    },
     /// One text block exceeds [`MAX_BLOCK_TEXT_BYTES`].
-    BlockTextTooLong { node_id: String, bytes: usize, max: usize },
+    BlockTextTooLong {
+        node_id: String,
+        bytes: usize,
+        max: usize,
+    },
     /// The whole document's text exceeds [`MAX_TOTAL_TEXT_BYTES`].
     TotalTextTooLong { bytes: usize, max: usize },
     /// The serialized document exceeds [`MAX_DOCUMENT_BYTES`].
@@ -333,7 +349,11 @@ pub enum DocumentError {
         max: i128,
     },
     /// A game embed has more parameters than [`MAX_EMBED_PARAMS`].
-    TooManyEmbedParams { node_id: String, count: usize, max: usize },
+    TooManyEmbedParams {
+        node_id: String,
+        count: usize,
+        max: usize,
+    },
 }
 
 impl fmt::Display for DocumentError {
@@ -450,8 +470,10 @@ impl SerialDocumentV1 {
             });
         }
 
-        let doc: SerialDocumentV1 = serde_json::from_str(input)
-            .map_err(|e| DocumentError::InvalidJson { message: e.to_string() })?;
+        let doc: SerialDocumentV1 =
+            serde_json::from_str(input).map_err(|e| DocumentError::InvalidJson {
+                message: e.to_string(),
+            })?;
 
         if doc.version != SUPPORTED_VERSION {
             return Err(DocumentError::UnsupportedVersion {
@@ -479,8 +501,9 @@ impl SerialDocumentV1 {
     /// Deterministic: field order is fixed by the struct definitions, so equal logical
     /// documents always produce equal strings.
     pub fn to_json(&self) -> Result<String, DocumentError> {
-        serde_json::to_string(self)
-            .map_err(|e| DocumentError::InvalidJson { message: format!("serialization failed: {e}") })
+        serde_json::to_string(self).map_err(|e| DocumentError::InvalidJson {
+            message: format!("serialization failed: {e}"),
+        })
     }
 
     /// Re-run validation on an in-memory document (e.g. before persisting).
@@ -590,8 +613,8 @@ fn normalize_node(
             normalize_identifier(IdKind::NodeId, &mut g.id, MAX_NODE_ID_BYTES)?;
             register_node_id(&g.id, &mut walk.seen)?;
             normalize_identifier(IdKind::EmbedId, &mut g.embed_id, MAX_EMBED_ID_BYTES)?;
-            check_dimension("width", &mut Some(g.width))?;
-            check_dimension("height", &mut Some(g.height))?;
+            check_dimension_non_optional("width", &mut g.width)?;
+            check_dimension_non_optional("height", &mut g.height)?;
             normalize_required_text("title", &mut g.title)?;
             if g.params.len() > MAX_EMBED_PARAMS {
                 return Err(DocumentError::TooManyEmbedParams {
@@ -629,7 +652,9 @@ fn normalize_node(
             normalize_identifier(IdKind::NodeId, &mut panel.id, MAX_NODE_ID_BYTES)?;
             register_node_id(&panel.id, &mut walk.seen)?;
             if panel.children.is_empty() {
-                return Err(DocumentError::EmptyPanel { id: panel.id.clone() });
+                return Err(DocumentError::EmptyPanel {
+                    id: panel.id.clone(),
+                });
             }
             normalize_optional_text("label", &mut panel.label)?;
             for child in &mut panel.children {
@@ -646,7 +671,9 @@ fn normalize_runs(
     walk: &mut Walk,
 ) -> Result<Vec<InlineRun>, DocumentError> {
     if runs.is_empty() {
-        return Err(DocumentError::EmptyBlock { node_id: node_id.to_string() });
+        return Err(DocumentError::EmptyBlock {
+            node_id: node_id.to_string(),
+        });
     }
     if runs.len() > MAX_RUNS_PER_BLOCK {
         return Err(DocumentError::TooManyRuns {
@@ -669,7 +696,10 @@ fn normalize_runs(
                 validate_url(&mut url)?;
                 let mut link_text = l.text.clone();
                 normalize_optional_text("link text", &mut link_text)?;
-                Some(InlineLink { url, text: link_text })
+                Some(InlineLink {
+                    url,
+                    text: link_text,
+                })
             }
         };
 
@@ -698,11 +728,7 @@ fn normalize_runs(
 
 // -- field helpers ---------------------------------------------------------
 
-fn normalize_identifier(
-    kind: IdKind,
-    value: &mut String,
-    max: usize,
-) -> Result<(), DocumentError> {
+fn normalize_identifier(kind: IdKind, value: &mut String, max: usize) -> Result<(), DocumentError> {
     let trimmed = value.trim().to_string();
     if trimmed.is_empty() {
         return Err(DocumentError::InvalidIdentifier {
@@ -743,7 +769,9 @@ fn normalize_run_text(node_id: &str, value: &mut String) -> Result<(), DocumentE
     let trimmed = value.trim().to_string();
     reject_unsafe_text("text", &trimmed)?;
     if trimmed.is_empty() {
-        return Err(DocumentError::EmptyBlock { node_id: node_id.to_string() });
+        return Err(DocumentError::EmptyBlock {
+            node_id: node_id.to_string(),
+        });
     }
     *value = trimmed;
     Ok(())
@@ -807,9 +835,7 @@ fn validate_url(value: &mut String) -> Result<(), DocumentError> {
     let trimmed = value.trim().to_string();
     let ok_scheme = trimmed.starts_with("http://") || trimmed.starts_with("https://");
     let ok_len = trimmed.len() <= MAX_URL_BYTES;
-    let no_control = !trimmed
-        .chars()
-        .any(|c| (c as u32) < 0x20 || c == '\u{7f}');
+    let no_control = !trimmed.chars().any(|c| (c as u32) < 0x20 || c == '\u{7f}');
     if !ok_scheme || !ok_len || !no_control {
         return Err(DocumentError::InvalidUrl { url: trimmed });
     }
@@ -831,11 +857,20 @@ fn check_dimension(field: &str, value: &mut Option<u16>) -> Result<(), DocumentE
     Ok(())
 }
 
+fn check_dimension_non_optional(field: &str, value: &mut u16) -> Result<(), DocumentError> {
+    if *value < MIN_DIMENSION_UNITS || *value > MAX_DIMENSION_UNITS {
+        return Err(DocumentError::OutOfRange {
+            field: field.to_string(),
+            value: *value as i128,
+            min: MIN_DIMENSION_UNITS as i128,
+            max: MAX_DIMENSION_UNITS as i128,
+        });
+    }
+    Ok(())
+}
+
 fn reject_unsafe_text(field: &str, s: &str) -> Result<(), DocumentError> {
-    if s
-        .chars()
-        .any(|c| (c as u32) < 0x20 || c == '\u{7f}')
-    {
+    if s.chars().any(|c| (c as u32) < 0x20 || c == '\u{7f}') {
         return Err(DocumentError::InvalidTextField {
             field: field.to_string(),
             reason: FieldReason::ControlCharacter,
@@ -1182,7 +1217,10 @@ mod tests {
             let doc = format!(
                 r#"{{"version":1,"nodes":[{{"type":"rotatedText","id":"r1","runs":[{{"text":"x"}}],"rotation":{rot}}}]}}"#
             );
-            assert!(SerialDocumentV1::from_json(&doc).is_ok(), "rotation {rot} should be accepted");
+            assert!(
+                SerialDocumentV1::from_json(&doc).is_ok(),
+                "rotation {rot} should be accepted"
+            );
         }
     }
 
@@ -1207,6 +1245,90 @@ mod tests {
     }
 
     #[test]
+    fn rejects_game_embed_dimension_out_of_range() {
+        let zero = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":0,"height":320,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(zero),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "width"
+        ));
+        let too_big = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":4097,"height":320,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(too_big),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "width"
+        ));
+        let zero_h = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":0,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(zero_h),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "height"
+        ));
+        let too_big_h = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":4097,"title":"Test","params":[]}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(too_big_h),
+            Err(DocumentError::OutOfRange { field, .. }) if field == "height"
+        ));
+    }
+
+    #[test]
+    fn accepts_game_embed_dimension_at_bounds() {
+        for (w, h) in [(1, 1), (1, 4096), (4096, 1), (4096, 4096)] {
+            let doc = format!(
+                r#"{{"version":1,"nodes":[{{"type":"gameEmbed","id":"g1","embed_id":"game1","width":{w},"height":{h},"title":"Test","params":[]}}]}}"#
+            );
+            assert!(
+                SerialDocumentV1::from_json(&doc).is_ok(),
+                "dimensions {w}x{h} should be accepted"
+            );
+        }
+    }
+
+    #[test]
+    fn accepts_game_embed_dimension_intermediate_extremes() {
+        // Test intermediate values near bounds to ensure validation is correct
+        let doc = format!(
+            r#"{{"version":1,"nodes":[{{"type":"gameEmbed","id":"g1","embed_id":"game1","width":4095,"height":2,"title":"Test","params":[]}}]}}"#
+        );
+        assert!(
+            SerialDocumentV1::from_json(&doc).is_ok(),
+            "dimensions 4095x2 should be accepted"
+        );
+    }
+
+    #[test]
+    fn round_trip_game_embed_preserves_dimensions() {
+        let doc = r#"{
+            "version":1,
+            "nodes":[{"type":"gameEmbed","id":"g1","embed_id":"game1","width":480,"height":320,"title":"Test","params":[{"key":"level","value":"3"}]}]
+        }"#;
+        let first = SerialDocumentV1::from_json(doc).expect("should parse");
+        if let DocumentNode::GameEmbed(g) = &first.nodes[0] {
+            assert_eq!(g.width, 480);
+            assert_eq!(g.height, 320);
+        } else {
+            panic!("expected gameEmbed");
+        }
+        let serialized = first.to_json().expect("should serialize");
+        let second = SerialDocumentV1::from_json(&serialized).expect("should re-parse");
+        if let DocumentNode::GameEmbed(g) = &second.nodes[0] {
+            assert_eq!(g.width, 480);
+            assert_eq!(g.height, 320);
+        } else {
+            panic!("expected gameEmbed");
+        }
+    }
+
+    #[test]
     fn rejects_script_bearing_url() {
         let doc = r#"{
             "version":1,
@@ -1226,7 +1348,10 @@ mod tests {
             let doc = format!(
                 r#"{{"version":1,"nodes":[{{"type":"paragraph","id":"p1","runs":[{{"text":"a","link":{{"url":"{scheme}"}}}}]}}]}}"#
             );
-            assert!(SerialDocumentV1::from_json(&doc).is_ok(), "scheme {scheme} should be accepted");
+            assert!(
+                SerialDocumentV1::from_json(&doc).is_ok(),
+                "scheme {scheme} should be accepted"
+            );
         }
     }
 
