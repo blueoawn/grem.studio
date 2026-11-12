@@ -5,9 +5,9 @@ use spacetimedb::{ReducerContext, Table};
 
 mod accounts;
 pub mod media;
+mod minigames;
 pub mod serial;
 pub mod serial_document;
-mod minigames;
 
 use accounts::require_admin;
 
@@ -76,7 +76,10 @@ fn validate_optional_url(url: &str, field_name: &str) -> Result<String, String> 
         return Err(format!("{} too long (max 500 characters)", field_name));
     }
     if !trimmed.starts_with("http://") && !trimmed.starts_with("https://") {
-        return Err(format!("{} must start with http:// or https://", field_name));
+        return Err(format!(
+            "{} must start with http:// or https://",
+            field_name
+        ));
     }
     Ok(trimmed)
 }
@@ -233,7 +236,9 @@ pub fn move_post(ctx: &ReducerContext, post_id: u64, move_up: bool) -> Result<()
     let target = if move_up {
         position.checked_sub(1)
     } else {
-        position.checked_add(1).filter(|target| *target < posts.len())
+        position
+            .checked_add(1)
+            .filter(|target| *target < posts.len())
     };
 
     let Some(target) = target else {

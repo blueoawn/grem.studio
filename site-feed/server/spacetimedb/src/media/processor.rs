@@ -50,7 +50,7 @@ pub fn process_asset(
     
     // Update asset content type to sniffed type
     asset.content_type = sniffed_type;
-    asset.byte_size = file_size as i64;
+    asset.byte_size = file_size;
     
     // Compute content hash
     let content_hash = compute_file_hash(temp_path)?;

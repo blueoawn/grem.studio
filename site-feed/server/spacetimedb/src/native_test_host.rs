@@ -47,8 +47,9 @@ fn host_calls_fail_instead_of_simulating_a_database() {
         .output()
         .unwrap();
     assert_eq!(output.status.code(), Some(101));
-    assert!(String::from_utf8_lossy(&output.stderr)
-        .contains("SpacetimeDB host call table_id_from_name requires a running SpacetimeDB server"));
+    assert!(String::from_utf8_lossy(&output.stderr).contains(
+        "SpacetimeDB host call table_id_from_name requires a running SpacetimeDB server"
+    ));
 }
 unavailable_host!(table_id_from_name(name: *const u8, name_len: usize, out: *mut TableId) -> u16);
 unavailable_host!(

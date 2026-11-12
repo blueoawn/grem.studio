@@ -48,7 +48,10 @@ pub struct MyAccount {
 fn my_account(ctx: &ViewContext) -> Option<MyAccount> {
     let session = ctx.db.sessions().identity().find(ctx.sender)?;
     let account = ctx.db.accounts().username().find(&session.username)?;
-    Some(MyAccount { username: account.username, is_admin: account.is_admin })
+    Some(MyAccount {
+        username: account.username,
+        is_admin: account.is_admin,
+    })
 }
 
 /// Never includes the password hash.
@@ -80,8 +83,18 @@ fn account_audit(ctx: &ViewContext) -> Vec<AccountSummary> {
         .filter(true)
         .chain(accounts.filter(false))
         .map(|account| AccountSummary {
-            serial_posts: ctx.db.serial_posts().created_by().filter(&account.username).count() as u32,
-            active_sessions: ctx.db.sessions().username().filter(&account.username).count() as u32,
+            serial_posts: ctx
+                .db
+                .serial_posts()
+                .created_by()
+                .filter(&account.username)
+                .count() as u32,
+            active_sessions: ctx
+                .db
+                .sessions()
+                .username()
+                .filter(&account.username)
+                .count() as u32,
             created_at: account.created_at,
             is_admin: account.is_admin,
             username: account.username,
@@ -124,7 +137,8 @@ fn require_owner(ctx: &ReducerContext) -> Result<(), String> {
 fn hash_password(ctx: &ReducerContext, password: &str) -> Result<String, String> {
     let mut salt_bytes = [0u8; 16];
     ctx.rng().fill(&mut salt_bytes);
-    let salt = SaltString::encode_b64(&salt_bytes).map_err(|_| "Unable to create password salt".to_string())?;
+    let salt = SaltString::encode_b64(&salt_bytes)
+        .map_err(|_| "Unable to create password salt".to_string())?;
     Argon2::default()
         .hash_password(password.as_bytes(), &salt)
         .map(|hash| hash.to_string())
@@ -134,7 +148,11 @@ fn hash_password(ctx: &ReducerContext, password: &str) -> Result<String, String>
 fn verify_password(password: &str, stored_hash: &str) -> bool {
     PasswordHash::new(stored_hash)
         .ok()
-        .and_then(|hash| Argon2::default().verify_password(password.as_bytes(), &hash).ok())
+        .and_then(|hash| {
+            Argon2::default()
+                .verify_password(password.as_bytes(), &hash)
+                .ok()
+        })
         .is_some()
 }
 
@@ -171,7 +189,12 @@ pub(crate) fn require_admin(ctx: &ReducerContext) -> Result<String, String> {
         .ok_or_else(|| "Must be logged in as an admin".to_string())
 }
 
-fn create_account(ctx: &ReducerContext, username: &str, password: &str, is_admin: bool) -> Result<(), String> {
+fn create_account(
+    ctx: &ReducerContext,
+    username: &str,
+    password: &str,
+    is_admin: bool,
+) -> Result<(), String> {
     let username = validate_username(username)?;
     validate_password(password)?;
     if ctx.db.accounts().username().find(&username).is_some() {
@@ -188,7 +211,12 @@ fn create_account(ctx: &ReducerContext, username: &str, password: &str, is_admin
 
 /// Logs the account out everywhere, then removes it. Posts stay up under the same name.
 fn delete_account(ctx: &ReducerContext, account: &Account) {
-    let sessions: Vec<Session> = ctx.db.sessions().username().filter(&account.username).collect();
+    let sessions: Vec<Session> = ctx
+        .db
+        .sessions()
+        .username()
+        .filter(&account.username)
+        .collect();
     for session in sessions {
         ctx.db.sessions().identity().delete(&session.identity);
     }
@@ -220,7 +248,10 @@ pub fn login(ctx: &ReducerContext, username: String, password: String) -> Result
         .ok_or_else(|| "Invalid username or password".to_string())?;
 
     ctx.db.sessions().identity().delete(&ctx.sender);
-    ctx.db.sessions().insert(Session { identity: ctx.sender, username: account.username });
+    ctx.db.sessions().insert(Session {
+        identity: ctx.sender,
+        username: account.username,
+    });
     Ok(())
 }
 
@@ -233,7 +264,11 @@ pub fn logout(ctx: &ReducerContext) -> Result<(), String> {
 // -- Admin accounts (operator CLI only: scripts/add-admin.mjs, scripts/manage-admins.mjs) --
 
 #[spacetimedb::reducer]
-pub fn create_admin_account(ctx: &ReducerContext, username: String, password: String) -> Result<(), String> {
+pub fn create_admin_account(
+    ctx: &ReducerContext,
+    username: String,
+    password: String,
+) -> Result<(), String> {
     require_owner(ctx)?;
     create_account(ctx, &username, &password, true)
 }
@@ -243,7 +278,10 @@ pub fn delete_admin_account(ctx: &ReducerContext, username: String) -> Result<()
     require_owner(ctx)?;
     let account = find_account(ctx, &username)?;
     if !account.is_admin {
-        return Err(format!("'{}' is a publisher; use delete_publisher_account", account.username));
+        return Err(format!(
+            "'{}' is a publisher; use delete_publisher_account",
+            account.username
+        ));
     }
     delete_account(ctx, &account);
     Ok(())
@@ -263,14 +301,22 @@ fn require_account_manager(ctx: &ReducerContext) -> Result<Option<Account>, Stri
 }
 
 #[spacetimedb::reducer]
-pub fn create_publisher_account(ctx: &ReducerContext, username: String, password: String) -> Result<(), String> {
+pub fn create_publisher_account(
+    ctx: &ReducerContext,
+    username: String,
+    password: String,
+) -> Result<(), String> {
     require_account_manager(ctx)?;
     create_account(ctx, &username, &password, false)
 }
 
 /// Admins re-enter their own password to confirm; the operator's CLI passes an empty string.
 #[spacetimedb::reducer]
-pub fn delete_publisher_account(ctx: &ReducerContext, username: String, confirm_password: String) -> Result<(), String> {
+pub fn delete_publisher_account(
+    ctx: &ReducerContext,
+    username: String,
+    confirm_password: String,
+) -> Result<(), String> {
     if let Some(admin) = require_account_manager(ctx)? {
         if !verify_password(&confirm_password, &admin.password_hash) {
             return Err("Your password is incorrect".into());

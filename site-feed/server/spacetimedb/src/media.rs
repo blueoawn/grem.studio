@@ -7,7 +7,7 @@
 pub mod processor;
 pub mod worker;
 
-use crate::accounts::{sessions, sessions__view, accounts, accounts__view};
+use crate::accounts::{accounts, accounts__view, sessions, sessions__view};
 use crate::now_micros;
 use spacetimedb::{ReducerContext, Table};
 
@@ -72,7 +72,7 @@ pub struct MediaAsset {
     pub publisher: spacetimedb::Identity,
 
     pub content_type: String,
-    pub byte_size: i64,
+    pub byte_size: u64,
     /// Storage backend key (e.g., S3 object key or local path)
     pub storage_key: String,
     /// Processing status: 0=pending, 1=processing, 2=ready, 3=failed
@@ -129,10 +129,17 @@ pub fn revoke_publisher(ctx: &ReducerContext, publisher_identity: &spacetimedb::
 
     // Delete pending upload intents for this identity
     // This uses the publisher index which is efficient
-    let intents: Vec<UploadIntent> =
-        ctx.db.upload_intents().publisher().filter(publisher_identity).collect();
+    let intents: Vec<UploadIntent> = ctx
+        .db
+        .upload_intents()
+        .publisher()
+        .filter(publisher_identity)
+        .collect();
     for intent in intents {
-        ctx.db.upload_intents().intent_key().delete(&intent.intent_key);
+        ctx.db
+            .upload_intents()
+            .intent_key()
+            .delete(&intent.intent_key);
     }
 }
 
@@ -165,8 +172,14 @@ pub fn create_upload_intent(
     }
 
     // Enforce per-publisher quota
-    let used: i64 = ctx.db.media_assets().publisher().filter(&ctx.sender).map(|asset| asset.byte_size).sum();
-    if used.saturating_add(byte_limit as i64) > MAX_PUBLISHER_BYTES as i64 {
+    let used: u64 = ctx
+        .db
+        .media_assets()
+        .publisher()
+        .filter(&ctx.sender)
+        .map(|asset| asset.byte_size)
+        .sum();
+    if used.saturating_add(byte_limit) > MAX_PUBLISHER_BYTES {
         return Err("Publisher quota exceeded".into());
     }
 
@@ -189,8 +202,16 @@ pub fn create_upload_intent(
 /// Report upload progress for an intent. Use this for resumable uploads.
 /// The caller must not exceed the intent's byte_limit.
 #[spacetimedb::reducer]
-pub fn upload_progress(ctx: &ReducerContext, intent_key: String, bytes_received: u64) -> Result<(), String> {
-    let intent = ctx.db.upload_intents().intent_key().find(&intent_key)
+pub fn upload_progress(
+    ctx: &ReducerContext,
+    intent_key: String,
+    bytes_received: u64,
+) -> Result<(), String> {
+    let intent = ctx
+        .db
+        .upload_intents()
+        .intent_key()
+        .find(&intent_key)
         .ok_or_else(|| "Upload intent not found".to_string())?;
 
     if intent.publisher != ctx.sender {
@@ -221,7 +242,11 @@ pub fn finalize_upload(
     intent_key: String,
     storage_key: String,
 ) -> Result<(), String> {
-    let intent = ctx.db.upload_intents().intent_key().find(&intent_key)
+    let intent = ctx
+        .db
+        .upload_intents()
+        .intent_key()
+        .find(&intent_key)
         .ok_or_else(|| "Upload intent not found".to_string())?;
 
     if intent.publisher != ctx.sender {
@@ -257,7 +282,7 @@ pub fn finalize_upload(
             asset_id: intent.asset_id.clone(),
             publisher: ctx.sender,
             content_type: intent.content_type.clone(),
-            byte_size: intent.bytes_received as i64,
+            byte_size: intent.bytes_received,
             storage_key,
             status: ASSET_STATUS_PENDING,
             created_at: now,
@@ -279,7 +304,11 @@ pub fn finalize_upload(
 /// Delete a pending upload intent (e.g., on user cancellation).
 #[spacetimedb::reducer]
 pub fn delete_upload_intent(ctx: &ReducerContext, intent_key: String) -> Result<(), String> {
-    let intent = ctx.db.upload_intents().intent_key().find(&intent_key)
+    let intent = ctx
+        .db
+        .upload_intents()
+        .intent_key()
+        .find(&intent_key)
         .ok_or_else(|| "Upload intent not found".to_string())?;
 
     if intent.publisher != ctx.sender {
@@ -441,7 +470,8 @@ mod tests {
         // create_upload_intent checks byte_limit bounds, quota, and idempotency
         // Unit test verifies the function compiles
         // Actual validation testing requires SpacetimeDB test-utils
-        let _ = create_upload_intent as fn(&ReducerContext, String, String, String, String, u64) -> Result<(), String>;
+        let _ = create_upload_intent
+            as fn(&ReducerContext, String, String, String, String, u64) -> Result<(), String>;
     }
 
     #[test]

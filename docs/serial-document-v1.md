@@ -42,7 +42,7 @@ tag values are camelCase: `paragraph`, `rotatedText`, `image`, `video`, `gameEmb
 | `rotatedText` | `{ id, runs, rotation, alignment?, alt? }` | A line of text at a bounded rotation. |
 | `image` | `{ id, asset_id, alt, caption?, width?, height? }` | Reference to a published image asset. |
 | `video` | `{ id, asset_id, poster_asset_id?, caption?, width?, height? }` | Reference to a published video asset. |
-| `gameEmbed` | `{ id, embed_id, width, height, title, params[] }` | Sized reference to an approved minigame. |
+| `gameEmbed` | `{ id, embed_id, width, height, title, params[] }` | Sized reference to an approved minigame. Dimensions are required. |
 | `panel` | `{ id, label?, children[] }` | Optional scene/panel grouping of nodes. |
 
 ### Inline runs (`runs`)
@@ -274,7 +274,14 @@ A clock ticked.
 
 ---
 
-## 8. Error type
+## 8. Fallback behavior for unsupported clients
+
+Clients that do not support `gameEmbed` nodes should render a placeholder using the
+`title` field as fallback text. The `title` field is required and must contain meaningful
+text that describes the minigame (e.g., "Escape the room"). The minigame registry
+resolution (origin/path policy) is handled elsewhere and is not part of this contract.
+
+## 9. Error type
 
 `DocumentError` is a closed enum with a stable `Display` per variant, covering:
 `InvalidJson`, `UnsupportedVersion`, `EmptyDocument`, `TooManyNodes`, `PanelTooDeep`,
@@ -285,7 +292,7 @@ A clock ticked.
 
 ---
 
-## 9. Scope / non-goals (issue #7)
+## 10. Scope / non-goals (issue #7)
 
 In scope: the versioned struct, validation, normalization, deterministic serialization,
 plain-text extraction, typed errors, unit tests, and this contract doc.
