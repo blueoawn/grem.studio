@@ -360,9 +360,13 @@ pub fn update_asset_status(
     variants: Option<String>,
     content_hash: Option<String>,
 ) -> Result<(), String> {
-    let asset = ctx.db.media_assets().asset_id().find(&asset_id)
+    let asset = ctx
+        .db
+        .media_assets()
+        .asset_id()
+        .find(&asset_id)
         .ok_or_else(|| "Asset not found".to_string())?;
-    
+
     ctx.db.media_assets().asset_id().update(MediaAsset {
         status,
         processed_at,
@@ -373,7 +377,7 @@ pub fn update_asset_status(
         content_hash,
         ..asset
     });
-    
+
     Ok(())
 }
 
@@ -385,13 +389,17 @@ pub fn process_asset(
     temp_path: String,
 ) -> Result<(), String> {
     // Find the asset
-    let asset = ctx.db.media_assets().asset_id().find(&asset_id)
+    let asset = ctx
+        .db
+        .media_assets()
+        .asset_id()
+        .find(&asset_id)
         .ok_or_else(|| "Asset not found".to_string())?;
-    
+
     // Call the processor module
     let mut asset_to_process = asset.clone();
     let temp_path_ref = std::path::Path::new(&temp_path);
-    
+
     match crate::media::processor::process_asset(&mut asset_to_process, temp_path_ref) {
         Ok(()) => {
             // Update the asset with the processed metadata
@@ -406,7 +414,7 @@ pub fn process_asset(
                 content_hash: asset_to_process.content_hash,
                 ..asset_to_process
             });
-            
+
             Ok(())
         }
         Err(e) => {
@@ -417,7 +425,7 @@ pub fn process_asset(
                 processed_at: Some(now),
                 ..asset
             });
-            
+
             Err(e)
         }
     }
@@ -519,7 +527,18 @@ mod tests {
         // update_asset_status updates asset status and metadata
         // Unit test verifies the function compiles
         // Actual update testing requires SpacetimeDB test-utils
-        let _ = update_asset_status as fn(&ReducerContext, String, i32, Option<u64>, Option<i32>, Option<i32>, Option<i32>, Option<String>, Option<String>) -> Result<(), String>;
+        let _ = update_asset_status
+            as fn(
+                &ReducerContext,
+                String,
+                i32,
+                Option<u64>,
+                Option<i32>,
+                Option<i32>,
+                Option<i32>,
+                Option<String>,
+                Option<String>,
+            ) -> Result<(), String>;
     }
 
     #[test]

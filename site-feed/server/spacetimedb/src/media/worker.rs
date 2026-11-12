@@ -7,10 +7,13 @@
 //! - Updating asset status
 //! - Handling failures gracefully
 
-use crate::media::{MediaAsset, ASSET_STATUS_PROCESSING, ASSET_STATUS_READY, ASSET_STATUS_FAILED, ASSET_STATUS_PENDING};
 use crate::media::processor::process_asset;
-use crate::now_micros;
 use crate::media::{media_assets, upload_intents};
+use crate::media::{
+    MediaAsset, ASSET_STATUS_FAILED, ASSET_STATUS_PENDING, ASSET_STATUS_PROCESSING,
+    ASSET_STATUS_READY,
+};
+use crate::now_micros;
 use spacetimedb::Table;
 
 /// Maximum number of assets to process in a single call (to avoid timeouts)
@@ -20,16 +23,17 @@ const MAX_ASSETS_PER_CALL: usize = 100;
 /// This would be called by a scheduled worker or manually
 pub fn process_pending_assets(ctx: &spacetimedb::ReducerContext) -> Result<usize, String> {
     let mut processed = 0;
-    
+
     // Get all assets using the publisher index and filter by status in memory
     // In SpacetimeDB 1.12, we can't directly filter on non-indexed fields or use status index directly
     // So we get all assets and filter by status
     let all_assets: Vec<MediaAsset> = ctx.db.media_assets().iter().collect();
-    let pending_assets: Vec<MediaAsset> = all_assets.into_iter()
+    let pending_assets: Vec<MediaAsset> = all_assets
+        .into_iter()
         .filter(|a| a.status == ASSET_STATUS_PENDING)
         .take(MAX_ASSETS_PER_CALL)
         .collect();
-    
+
     for asset in pending_assets {
         // Mark as processing
         update_asset_status(
@@ -43,10 +47,10 @@ pub fn process_pending_assets(ctx: &spacetimedb::ReducerContext) -> Result<usize
             None,
             None,
         )?;
-        
+
         // Process the asset
         let result = process_asset_from_storage(ctx, &asset);
-        
+
         match result {
             Ok(()) => {
                 // Asset processed successfully
@@ -69,16 +73,19 @@ pub fn process_pending_assets(ctx: &spacetimedb::ReducerContext) -> Result<usize
             }
         }
     }
-    
+
     Ok(processed)
 }
 
 /// Process an asset from its storage location
-fn process_asset_from_storage(ctx: &spacetimedb::ReducerContext, asset: &MediaAsset) -> Result<(), String> {
+fn process_asset_from_storage(
+    ctx: &spacetimedb::ReducerContext,
+    asset: &MediaAsset,
+) -> Result<(), String> {
     // Get the temp path from storage_key
     // In a full implementation, this would download from S3 or similar
     let temp_path = std::path::Path::new(&asset.storage_key);
-    
+
     // Check if the file exists
     if !temp_path.exists() {
         // Update status to failed before returning error
@@ -95,7 +102,7 @@ fn process_asset_from_storage(ctx: &spacetimedb::ReducerContext, asset: &MediaAs
         )?;
         return Err(format!("File not found: {}", temp_path.display()));
     }
-    
+
     // Process the asset
     let mut asset_to_process = asset.clone();
     match process_asset(&mut asset_to_process, temp_path) {
@@ -112,7 +119,7 @@ fn process_asset_from_storage(ctx: &spacetimedb::ReducerContext, asset: &MediaAs
                 asset_to_process.variants.clone(),
                 asset_to_process.content_hash.clone(),
             )?;
-            
+
             Ok(())
         }
         Err(e) => {
@@ -168,21 +175,24 @@ fn log_error(asset_id: &str, error: &impl std::fmt::Display) {
 /// Expire partial uploads that have exceeded their TTL
 pub fn expire_partial_uploads(ctx: &spacetimedb::ReducerContext) -> Result<usize, String> {
     let now = now_micros(ctx);
-    
+
     // Get all intents using the publisher index and filter by expiry time in memory
     // In SpacetimeDB 1.12, we can't directly filter on non-indexed fields
     // So we get all intents and filter by expiry time
     let intents: Vec<crate::media::UploadIntent> = ctx.db.upload_intents().iter().collect();
-    
+
     let mut expired_count = 0;
     for intent in intents {
         if intent.expires_at < now {
             // Delete expired intent
-            ctx.db.upload_intents().intent_key().delete(&intent.intent_key);
+            ctx.db
+                .upload_intents()
+                .intent_key()
+                .delete(&intent.intent_key);
             expired_count += 1;
         }
     }
-    
+
     Ok(expired_count)
 }
 
@@ -194,16 +204,17 @@ pub fn cleanup_failed_assets(ctx: &spacetimedb::ReducerContext) -> Result<usize,
     // In SpacetimeDB 1.12, we can't directly filter on non-indexed fields
     // So we get all assets and filter by status
     let all_assets: Vec<MediaAsset> = ctx.db.media_assets().iter().collect();
-    let failed_assets: Vec<MediaAsset> = all_assets.iter()
+    let failed_assets: Vec<MediaAsset> = all_assets
+        .iter()
         .filter(|a| a.status == ASSET_STATUS_FAILED)
         .cloned()
         .collect();
-    
+
     // Delete failed assets
     for asset in &failed_assets {
         ctx.db.media_assets().asset_id().delete(&asset.asset_id);
     }
-    
+
     Ok(failed_assets.len())
 }
 
