@@ -372,10 +372,53 @@ compare. Decoder failures produce a short failure code. Temporary I/O, tool,
 or database failures are returned to the queue as errors and leave the asset
 in processing for retry. The caller schedules retries and storage cleanup.
 
-Run `npm test` in the processor directory with both media tools on PATH to
-exercise its image, video, rejection, bounded-read, and retry scenarios using
-small synthetic fixtures. The end-to-end gateway and published URLs are covered
-by the media processing integration ticket.
+### Local storage worker and HTTP delivery
+
+Run `node service.mjs` with the same environment as the single-job CLI.
+The service binds to loopback on `SITE_FEED_MEDIA_PORT` (8080 by default). Route
+`/media/` to it from the site's HTTP proxy. The service polls `media_processing_jobs`
+every five seconds and processes pending or interrupted jobs. Transient errors
+delay retries for 60 seconds within the running process. After a restart, any
+job still in processing can retry immediately. A crash before the final report
+keeps the objects private.
+
+Only a trusted upload service should write to the private root. The polling
+worker expects immutable originals at `uploads/<publisher-identity-hex>/<asset-id>`.
+Use lowercase hex without a prefix. Move finalized bytes there before reporting
+progress and finalizing the intent. Migrate older local objects to that layout
+and reconcile their stored keys before enabling the polling worker. A job whose
+stored key differs from its publisher's canonical key fails with
+`invalid_storage_key`. The worker compares the recorded size with the actual
+size. For partial uploads, use `partial-uploads/<expiry-unix-ms>-<uuid>.part`
+with the intent expiration rounded up to milliseconds. The worker deletes
+expired staging files and calls the module to expire intent metadata. Upload
+handlers should stop writing at the intent deadline.
+
+The worker and delivery views return rows only to the configured processor.
+Delivery checks the ready view and the `published_media_references` index before
+opening private storage. Public paths are `/media/<asset-id>` for the source
+image or browser video and the `/thumbnail`, `/poster`, or `/deliverable`
+subpath for a variant. Responses support `HEAD` and single byte ranges. Removing
+the last publication reference removes public access.
+
+### Local verification
+
+Run with Node 22, Cargo with the Wasm target, and FFmpeg/FFprobe on PATH.
+Start a disposable SpacetimeDB 1.12 instance on `127.0.0.1:3000` or set
+`SITE_FEED_TEST_URL` to its loopback URL. Run from the repository root:
+
+```sh
+npm --prefix site-feed/media-processor ci
+node --test site-feed/scripts/test-media-processing.mjs
+npm --prefix site-feed/media-processor run test:processor
+```
+
+The configured Gantry command `media-processor-test` runs both suites via
+`npm --prefix site-feed/media-processor test`. The integration suite builds
+and publishes the module with throwaway owner and processor identities, then
+exercises finalized objects and HTTP delivery against real storage and database
+state. The oversized case injects a 101 MiB object after B1 finalization to
+exercise the storage-side limit independently of the upload byte-count cap.
 
 ## Failure and retry behavior
 
@@ -392,7 +435,9 @@ by the media processing integration ticket.
 
 For existing SpacetimeDB 1.12 databases, publishing the module adds the
 processing columns at the end of `media_assets` with explicit defaults and
-adds an expiry index on `upload_intents`. Existing asset rows and their
+adds an expiry index on `upload_intents` when upgrading from the B1 schema.
+This integration also adds a status index and two processor-only views for jobs
+and delivery. Existing asset rows and their
 original metadata are preserved. Existing assets start pending and must be
 processed before the readiness helper can return a URL. The publisher view
 gains the new fields, so regenerate and deploy client bindings with the module.

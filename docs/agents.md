@@ -50,6 +50,10 @@ cargo build --locked --target wasm32-unknown-unknown
 node --check site-feed/scripts/test-serial-revisions.mjs
 bash -n deploy.sh
 
+# Media processor and live integration (SpacetimeDB 1.12, FFmpeg/FFprobe)
+npm --prefix site-feed/media-processor ci
+npm --prefix site-feed/media-processor test
+
 # Admin / widget (needs generated bindings, see limits)
 cd site-feed/admin && npm ci && npm run generate && npm run build
 ```

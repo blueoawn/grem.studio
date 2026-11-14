@@ -21,11 +21,11 @@ const TOOLS = { ffmpeg: 'ffmpeg', ffprobe: 'ffprobe' };
 
 class InvalidMedia extends Error {}
 
-async function spool(storage, key, input) {
+async function spool(storage, key, input, expectedSize) {
   const size = await storage.size(key);
   if (!Number.isSafeInteger(size) || size < 0) throw new Error('Storage returned an invalid object size');
   if (size > MAX_BYTES) throw new InvalidMedia('too_large');
-  if (size === 0) throw new InvalidMedia('malformed');
+  if (size === 0 || (expectedSize !== undefined && size !== expectedSize)) throw new InvalidMedia('malformed');
 
   const hash = createHash('sha256');
   let received = 0;
@@ -157,14 +157,14 @@ async function inspectVideo(input, dir, type, tools) {
 }
 
 /** Process one finalized upload. The storage adapter and reporter are private to the worker. */
-export async function processMedia({ asset_id, storage_key, content_type }, { storage, reporter, tools = TOOLS }) {
+export async function processMedia({ asset_id, storage_key, content_type, byte_size }, { storage, reporter, tools = TOOLS }) {
   await reporter.begin(asset_id);
   const dir = await mkdtemp(join(tmpdir(), 'site-feed-media-'));
   try {
     const input = join(dir, 'upload');
     let result;
     try {
-      const sha256 = await spool(storage, storage_key, input);
+      const sha256 = await spool(storage, storage_key, input, byte_size);
       const type = await inspectType(input);
       if (!type || type !== content_type) throw new InvalidMedia('unsupported');
       const { outputs, ...metadata } = type.startsWith('image/')
