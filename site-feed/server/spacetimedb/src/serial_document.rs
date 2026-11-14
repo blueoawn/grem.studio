@@ -137,6 +137,7 @@ pub struct Paragraph {
 
 /// A line of text rendered at a bounded rotation angle.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct RotatedText {
     pub id: String,
     pub runs: Vec<InlineRun>,
@@ -587,7 +588,7 @@ fn normalize_node(
                 });
             }
             normalize_optional_text("alt", &mut r.alt)?;
-            r.runs = normalize_runs(&r.id, &r.runs, walk)?;
+            r.runs = normalize_runs(&r.id, &r.runs, walk).map_err(rotated_text_error)?;
         }
         DocumentNode::Image(img) => {
             normalize_identifier(IdKind::NodeId, &mut img.id, MAX_NODE_ID_BYTES)?;
@@ -841,6 +842,18 @@ fn validate_url(value: &mut String) -> Result<(), DocumentError> {
     }
     *value = trimmed;
     Ok(())
+}
+
+fn rotated_text_error(error: DocumentError) -> DocumentError {
+    // Classify executable targets for rotated lines after the existing URL rules reject them.
+    if let DocumentError::InvalidUrl { url } = &error {
+        if let Err(executable @ DocumentError::ExecutableContent { .. }) =
+            reject_unsafe_text("link url", url)
+        {
+            return executable;
+        }
+    }
+    error
 }
 
 fn check_dimension(field: &str, value: &mut Option<u16>) -> Result<(), DocumentError> {
@@ -1201,14 +1214,20 @@ mod tests {
 
     #[test]
     fn rejects_rotation_out_of_range() {
-        let doc = r#"{
-            "version":1,
-            "nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"x"}],"rotation":181}]
-        }"#;
-        assert!(matches!(
-            SerialDocumentV1::from_json(doc),
-            Err(DocumentError::OutOfRange { field, .. }) if field == "rotation"
-        ));
+        for rotation in [-181, 181] {
+            let json = format!(
+                r#"{{"version":1,"nodes":[{{"type":"rotatedText","id":"r1","runs":[{{"text":"x"}}],"rotation":{rotation}}}]}}"#
+            );
+            assert_eq!(
+                SerialDocumentV1::from_json(&json),
+                Err(DocumentError::OutOfRange {
+                    field: "rotation".to_string(),
+                    value: rotation,
+                    min: -180,
+                    max: 180,
+                })
+            );
+        }
     }
 
     #[test]
@@ -1222,6 +1241,77 @@ mod tests {
                 "rotation {rot} should be accepted"
             );
         }
+    }
+
+    #[test]
+    fn accepts_zero_rotation() {
+        let json = r#"{"version":1,"nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"x"}],"rotation":0}]}"#;
+        let doc = SerialDocumentV1::from_json(json).unwrap();
+        let DocumentNode::RotatedText(line) = &doc.nodes[0] else {
+            panic!("expected rotatedText");
+        };
+        assert_eq!(line.rotation, 0);
+    }
+
+    #[test]
+    fn rotated_text_round_trips_canonically() {
+        let json = r#"{
+            "nodes":[{
+                "type":"rotatedText","id":"r1","rotation":-12,"alignment":"center",
+                "runs":[{"text":" Turn back ","bold":true}],"alt":" turn back "
+            }],
+            "version":1
+        }"#;
+        let canonical = concat!(
+            r#"{"version":1,"nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"Turn back","bold":true,"#,
+            r#""italic":false,"underline":false,"strikethrough":false,"code":false,"link":null}],"#,
+            r#""rotation":-12,"alignment":"center","alt":"turn back"}]}"#,
+        );
+        let doc = SerialDocumentV1::from_json(json).unwrap();
+        let serialized = doc.to_json().unwrap();
+        assert_eq!(serialized, canonical);
+        let reparsed = SerialDocumentV1::from_json(&serialized).unwrap();
+        assert_eq!(reparsed, doc);
+        assert_eq!(reparsed.to_json().unwrap(), canonical);
+    }
+
+    #[test]
+    fn rejects_unknown_rotated_text_transform() {
+        let json = r#"{
+            "version":1,
+            "nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"x"}],"rotation":0,
+                      "transform":"rotate(90deg)"}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(json),
+            Err(DocumentError::InvalidJson { message }) if message.contains("unknown field `transform`")
+        ));
+    }
+
+    #[test]
+    fn rejects_script_in_rotated_text_runs() {
+        let json = r#"{
+            "version":1,
+            "nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"<script>alert(1)</script>"}],"rotation":0}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(json),
+            Err(DocumentError::ExecutableContent { field, token }) if field == "text" && token == "<script"
+        ));
+    }
+
+    #[test]
+    fn rejects_executable_rotated_text_link() {
+        let json = r#"{
+            "version":1,
+            "nodes":[{"type":"rotatedText","id":"r1","runs":[
+                {"text":"click","link":{"url":"javascript:alert(1)"}}
+            ],"rotation":0}]
+        }"#;
+        assert!(matches!(
+            SerialDocumentV1::from_json(json),
+            Err(DocumentError::ExecutableContent { field, token }) if field == "link url" && token == "javascript:"
+        ));
     }
 
     #[test]
@@ -1489,10 +1579,24 @@ mod tests {
     fn rotated_text_alt_is_appended_when_different() {
         let doc = r#"{
             "version":1,
-            "nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"The sky"}],"rotation":90,"alt":"read as: the sky"}]
+            "nodes":[{"type":"rotatedText","id":"r1","runs":[{"text":"B"}],"rotation":90,"alt":"bee"}]
         }"#;
         let parsed = SerialDocumentV1::from_json(doc).unwrap();
-        assert_eq!(parsed.plain_text(), "The sky (read as: the sky)");
+        assert_eq!(parsed.plain_text(), "B (bee)");
+    }
+
+    #[test]
+    fn plain_text_preserves_rotated_line_in_story_order() {
+        let json = r#"{
+            "version":1,
+            "nodes":[
+                {"type":"paragraph","id":"p1","runs":[{"text":"A"}]},
+                {"type":"rotatedText","id":"r1","runs":[{"text":"B"}],"rotation":90},
+                {"type":"paragraph","id":"p2","runs":[{"text":"C"}]}
+            ]
+        }"#;
+        let parsed = SerialDocumentV1::from_json(json).unwrap();
+        assert_eq!(parsed.plain_text(), "A\nB\nC");
     }
 
     fn node_id(node: &DocumentNode) -> &str {
