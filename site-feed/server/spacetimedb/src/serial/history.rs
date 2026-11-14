@@ -456,7 +456,12 @@ pub fn restore_serial_post(
     match &snapshot.content {
         RevisionContent::Published(published) => {
             if let Some(document) = &published.document {
-                super::validate_publication(ctx, document)?;
+                let normalized = crate::minigames::validate_publication(ctx, document)?;
+                // An invalid rich snapshot aborts the reducer before it changes the live post.
+                let assets = super::validate_media_references(ctx, &actor, &normalized)?;
+                super::replace_media_references(ctx, &post.slug, assets);
+            } else {
+                super::replace_media_references(ctx, &post.slug, Default::default());
             }
             ctx.db
                 .serial_posts()
