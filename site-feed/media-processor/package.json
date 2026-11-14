@@ -6,7 +6,8 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test"
+    "test": "node --test test/processor.test.mjs ../scripts/test-media-processing.mjs",
+    "test:processor": "node --test test/processor.test.mjs"
   },
   "dependencies": {
     "sharp": "^0.35.0"

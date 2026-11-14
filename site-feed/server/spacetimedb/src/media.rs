@@ -78,6 +78,7 @@ pub struct MediaAsset {
     pub created_at: u64,
     // Keep additions at the end with defaults so existing rows migrate in place.
     #[default(ASSET_STATUS_PENDING)]
+    #[index(btree)]
     pub status: i32,
     #[default(None::<u64>)]
     pub processed_at: Option<u64>,
@@ -133,14 +134,11 @@ struct ProcessorCaller {
 }
 
 impl ProcessorCaller {
-    fn from_context(ctx: &ReducerContext) -> Self {
+    fn new(sender: Identity) -> Self {
         let processor = option_env!("SITE_FEED_MEDIA_PROCESSOR_IDENTITY")
             .and_then(|hex| Identity::from_hex(hex).ok())
             .filter(|identity| *identity != Identity::ZERO);
-        Self {
-            sender: ctx.sender,
-            processor,
-        }
+        Self { sender, processor }
     }
 
     fn is_authorized(self) -> bool {
@@ -544,7 +542,7 @@ pub fn report_media_processing_result(
     asset_id: String,
     result: MediaProcessingResult,
 ) -> Result<(), String> {
-    let caller = ProcessorCaller::from_context(ctx);
+    let caller = ProcessorCaller::new(ctx.sender);
     let assets = ctx.db.media_assets().asset_id();
     let asset = if caller.is_authorized() {
         assets.find(&asset_id)
@@ -560,13 +558,40 @@ pub fn report_media_processing_result(
 /// Remove expired intent metadata. Object storage handles its own cleanup.
 #[spacetimedb::reducer]
 pub fn cleanup_expired_upload_intents(ctx: &ReducerContext) -> Result<(), String> {
-    ProcessorCaller::from_context(ctx).authorize()?;
+    ProcessorCaller::new(ctx.sender).authorize()?;
     let now = now_micros(ctx);
     let intents = ctx.db.upload_intents();
     for key in expired_intents(intents.expires_at().filter(..=now), now) {
         intents.intent_key().delete(&key);
     }
     Ok(())
+}
+
+/// Find finalized uploads that still need a terminal result. Object keys stay private.
+#[spacetimedb::view(name = media_processing_jobs, public)]
+fn media_processing_jobs(ctx: &spacetimedb::ViewContext) -> Vec<MediaAsset> {
+    if !ProcessorCaller::new(ctx.sender).is_authorized() {
+        return Vec::new();
+    }
+    let statuses = ctx.db.media_assets().status();
+    statuses
+        .filter(ASSET_STATUS_PENDING)
+        .chain(statuses.filter(ASSET_STATUS_PROCESSING))
+        .collect()
+}
+
+/// Give the storage service the metadata required to serve ready, authorized objects.
+#[spacetimedb::view(name = media_delivery_assets, public)]
+fn media_delivery_assets(ctx: &spacetimedb::ViewContext) -> Vec<MediaAsset> {
+    if !ProcessorCaller::new(ctx.sender).is_authorized() {
+        return Vec::new();
+    }
+    ctx.db
+        .media_assets()
+        .status()
+        .filter(ASSET_STATUS_READY)
+        .filter(|asset| public_url_for(asset).is_some())
+        .collect()
 }
 
 /// List all media assets owned by the caller (publisher only).

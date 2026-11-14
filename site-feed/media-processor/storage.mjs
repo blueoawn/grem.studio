@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { copyFile, link, mkdir, realpath, rm, stat } from 'node:fs/promises';
+import { copyFile, link, mkdir, readdir, realpath, rm, stat } from 'node:fs/promises';
 import { isAbsolute, join, relative, sep } from 'node:path';
 
 function objectSegments(key) {
@@ -22,13 +22,26 @@ async function requireInside(root, location) {
 export async function localStorage(directory) {
   const root = await realpath(directory);
   return {
+    async expirePartialUploads(now) {
+      const staging = await requireInside(root, join(root, 'partial-uploads')).catch((error) => {
+        if (error.code !== 'ENOENT') throw error;
+      });
+      if (!staging) return;
+      const entries = await readdir(staging, { withFileTypes: true });
+      for (const entry of entries) {
+        const match = /^(\d{13})-[a-f0-9-]+\.part$/.exec(entry.name);
+        if (entry.isFile() && match && Number(match[1]) <= now) {
+          await rm(join(staging, entry.name), { force: true });
+        }
+      }
+    },
     async size(key) {
       const object = await stat(await requireInside(root, join(root, ...objectSegments(key))));
       if (!object.isFile()) throw new Error('Stored upload is not a file');
       return object.size;
     },
-    async read(key, { end }) {
-      return createReadStream(await requireInside(root, join(root, ...objectSegments(key))), { end });
+    async read(key, { start, end }) {
+      return createReadStream(await requireInside(root, join(root, ...objectSegments(key))), { start, end });
     },
     async putVariantIfAbsent(key, source) {
       const segments = objectSegments(key);
