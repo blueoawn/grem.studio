@@ -309,6 +309,51 @@ The database gateway does not itself stream or delete object-storage bytes.
 Storage cleanup for cancelled, expired, or failed uploads is an integration
 responsibility.
 
+### Running the storage-side processor
+
+`site-feed/media-processor` handles one finalized upload at a time. Install
+dependencies with `npm ci` in that directory. Run with Node.js 22 and `ffmpeg`
+and `ffprobe` on PATH. FFmpeg must be able to decode the allowed input formats
+and provide the `libx264` and AAC encoders for MP4 output.
+
+```sh
+node cli.mjs <asset-id> <storage-key> <content-type>
+```
+
+The worker reads `SITE_FEED_SERVER`, `SITE_FEED_DATABASE`,
+`SITE_FEED_PROCESSOR_TOKEN`, and `SITE_FEED_STORAGE_ROOT` from its environment.
+The token must belong to the dedicated processor identity. Keep the root private
+to trusted storage processes. The built-in adapter uses relative storage keys
+and requires immutable finalized uploads and a filesystem with hard-link
+support. A queue or storage service can also import `processMedia` from
+`processor.mjs`, supply its own `size`, bounded `read` and `putVariantIfAbsent`
+storage methods, and reuse `spacetimeReporter` from `spacetime.mjs`.
+
+The processor checks the storage size before opening the upload and hashes bytes
+while copying at most 100 MiB to working storage. It checks declared media type
+against the signature and runs the appropriate decoder. Images produce an
+orientation-correct WebP thumbnail with a 256-pixel maximum side. Videos have a
+maximum size of 8192 pixels per side and a maximum duration of 3600 seconds.
+They produce a JPEG poster and a browser-compatible deliverable. The worker
+encodes MP4 as H.264 with AAC audio when present, and remuxes WebM with VP8, VP9
+or AV1 video and optional Opus/Vorbis audio. Fractional video durations are
+rounded up after enforcing the limit.
+
+Variants are written privately at `variants/media-v1/<sha256>/<filename>` only
+after the derivative set has been generated. The storage adapter creates a
+complete object at each key only if it is absent and returns the persisted byte
+count. This allows retries after partial writes and concurrent workers handling
+identical uploads to reuse the same objects. A worker that loses its connection
+after the terminal report can send the same result again for the reducer to
+compare. Decoder failures produce a short failure code. Temporary I/O, tool,
+or database failures are returned to the queue as errors and leave the asset
+in processing for retry. The caller schedules retries and storage cleanup.
+
+Run `npm test` in the processor directory with both media tools on PATH to
+exercise its image, video, rejection, bounded-read, and retry scenarios using
+small synthetic fixtures. The end-to-end gateway and published URLs are covered
+by the media processing integration ticket.
+
 ## Failure and retry behavior
 
 - Retrying `create_upload_intent` with the same `intent_key` from the same
