@@ -1,0 +1,14 @@
+{
+  "name": "site-feed-media-processor",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "sharp": "^0.35.0"
+  }
+}

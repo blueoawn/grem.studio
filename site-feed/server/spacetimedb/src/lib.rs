@@ -11,16 +11,11 @@ pub mod serial_document;
 
 use accounts::require_admin;
 
+pub use media::my_media_assets;
+pub use media::require_publisher;
 pub use media::{create_upload_intent, delete_upload_intent, finalize_upload, upload_progress};
-pub use media::{get_pending_assets, my_media_assets, process_asset, update_asset_status};
-pub use media::{
-    require_publisher, ASSET_STATUS_FAILED, ASSET_STATUS_PENDING, ASSET_STATUS_PROCESSING,
-    ASSET_STATUS_READY,
-};
 pub use media::{MediaAsset, UploadIntent};
 pub use media::{INTENT_TTL_MICROS, MAX_PUBLISHER_BYTES, MAX_UPLOAD_BYTES};
-
-pub use media::worker::{cleanup_failed_assets, expire_partial_uploads, process_pending_assets};
 
 // -- Tables --
 
