@@ -6,11 +6,12 @@
 use spacetimedb::{ReducerContext, Table};
 
 use crate::accounts::current_account;
-use crate::minigames::validate_publication;
+use crate::minigames;
 use crate::now_micros;
 use crate::serial_document::{SerialDocumentV1, MAX_DOCUMENT_BYTES};
 
 pub mod history;
+mod media_references;
 
 pub use history::{prune_old_revisions, restore_serial_post};
 
@@ -18,6 +19,7 @@ use history::{
     check_expected_revision, clear_history, head_revision, record_baseline, record_revision,
     DraftSnapshot, PublishedSnapshot, RevisionContent,
 };
+use media_references::{replace_media_references, validate_media_references};
 
 const RESERVED_SLUGS: &[&str] = &["assets"];
 
@@ -305,6 +307,7 @@ pub fn edit_serial_post(
 pub fn delete_serial_post(ctx: &ReducerContext, slug: String) -> Result<(), String> {
     let actor = require_actor(ctx)?;
     let existing = find_changeable_post(ctx, &actor, &slug)?;
+    replace_media_references(ctx, &existing.slug, Default::default());
     clear_history(ctx, &existing.slug);
     ctx.db
         .draft_rich_documents()
@@ -376,17 +379,19 @@ pub fn publish_rich_document(
 ) -> Result<(), String> {
     let actor = require_actor(ctx)?;
     let post = find_changeable_post(ctx, &actor, &slug)?;
-    validate_publication(ctx, &document)?;
-    store_publication(ctx, post, actor.username, document, None)
+    store_publication(ctx, post, actor, document, false)
 }
 
 fn store_publication(
     ctx: &ReducerContext,
     post: SerialPost,
-    author: String,
+    actor: Actor,
     document: String,
-    body: Option<String>,
+    update_legacy_body: bool,
 ) -> Result<(), String> {
+    let normalized = minigames::validate_publication(ctx, &document)?;
+    let assets = validate_media_references(ctx, &actor, &normalized)?;
+    let body_for_snapshot = normalized.plain_text();
     let documents = ctx.db.published_rich_documents();
     let existing = documents.slug().find(&post.slug);
     let baseline_author = existing
@@ -394,18 +399,8 @@ fn store_publication(
         .map_or_else(|| post.created_by.clone(), |row| row.modified_by.clone());
     let already_published = existing.is_some();
     let previous = PublishedSnapshot::from_post(&post, existing);
-    // When body is None, project plain text from the rich document to ensure
-    // the history snapshot has the correct body, not a potentially stale legacy body
-    let body_for_snapshot = body
-        .clone()
-        .or_else(|| {
-            SerialDocumentV1::from_json(&document)
-                .ok()
-                .map(|doc| doc.plain_text())
-        })
-        .unwrap_or_else(|| post.body.clone());
     let next = PublishedSnapshot {
-        body: body_for_snapshot,
+        body: body_for_snapshot.clone(),
         document: Some(document.clone()),
         ..PublishedSnapshot::from_post(&post, None)
     };
@@ -415,20 +410,26 @@ fn store_publication(
         &baseline_author,
         RevisionContent::Published(previous),
     )?;
-    record_revision(ctx, &post.slug, &author, RevisionContent::Published(next))?;
+    record_revision(
+        ctx,
+        &post.slug,
+        &actor.username,
+        RevisionContent::Published(next),
+    )?;
+    replace_media_references(ctx, &post.slug, assets);
 
     let slug = post.slug.clone();
-    if let Some(body) = body {
-        ctx.db
-            .serial_posts()
-            .slug()
-            .update(SerialPost { body, ..post });
+    if update_legacy_body {
+        ctx.db.serial_posts().slug().update(SerialPost {
+            body: body_for_snapshot,
+            ..post
+        });
     }
     let rich = PublishedRichDocument {
         slug,
         document,
         last_modified: now_micros(ctx),
-        modified_by: author,
+        modified_by: actor.username,
     };
     if already_published {
         documents.slug().update(rich);
@@ -592,7 +593,7 @@ pub fn save_draft_at_revision(
     let post = find_changeable_post(ctx, &actor, &post_slug)?;
     check_expected_revision(head_revision(ctx, &post.slug), expected_revision)?;
     find_draft(ctx, &post.slug, draft_id)?;
-    validate_publication(ctx, &document)?;
+    minigames::validate_publication(ctx, &document)?;
     store_draft(ctx, post.slug, actor.username, draft_id, document)
 }
 
@@ -634,7 +635,6 @@ pub fn publish_draft(
     let post = find_changeable_post(ctx, &actor, &post_slug)?;
     check_expected_revision(head_revision(ctx, &post.slug), expected_revision)?;
     let draft = find_draft(ctx, &post.slug, draft_id)?;
-    let body = validate_publication(ctx, &draft.document)?.plain_text();
     let document = draft.document.clone();
     let baseline_author = draft.created_by.clone();
     record_baseline(
@@ -644,7 +644,7 @@ pub fn publish_draft(
         RevisionContent::Draft(draft.into()),
     )?;
     let slug = post.slug.clone();
-    store_publication(ctx, post, actor.username, document, Some(body))?;
+    store_publication(ctx, post, actor, document, true)?;
     ctx.db.draft_rich_documents().post_slug().delete(&slug);
     Ok(())
 }
@@ -659,8 +659,7 @@ pub fn update_published_document(
     let actor = require_actor(ctx)?;
     let post = find_changeable_post(ctx, &actor, &post_slug)?;
     check_expected_revision(head_revision(ctx, &post.slug), expected_revision)?;
-    let body = validate_publication(ctx, &document)?.plain_text();
-    store_publication(ctx, post, actor.username, document, Some(body))
+    store_publication(ctx, post, actor, document, true)
 }
 
 #[spacetimedb::reducer]

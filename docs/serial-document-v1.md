@@ -41,7 +41,7 @@ tag values are camelCase: `paragraph`, `rotatedText`, `image`, `video`, `gameEmb
 | `paragraph` | `{ id, runs }` | A paragraph of inline text. |
 | `rotatedText` | `{ id, runs, rotation, alignment?, alt? }` | A line of text at a bounded rotation. |
 | `image` | `{ id, asset_id, alt, caption?, width?, height? }` | Reference to a published image asset. |
-| `video` | `{ id, asset_id, poster_asset_id?, caption?, width?, height? }` | Reference to a published video asset. |
+| `video` | `{ id, asset_id, poster_asset_id?, caption?, transcript_url?, width?, height? }` | Reference to a video asset. Publication requires a caption or transcript URL. |
 | `gameEmbed` | `{ id, embed_id, width, height, title, params[] }` | Sized reference to an approved minigame. Dimensions are required. |
 | `panel` | `{ id, label?, children[] }` | Optional scene/panel grouping of nodes. |
 
@@ -77,6 +77,10 @@ tag values are camelCase: `paragraph`, `rotatedText`, `image`, `video`, `gameEmb
 - **`alt`** (rotatedText) — an optional explanation appended to the visible text
   in the fallback when it adds information.
 - **`alt`** (image) — alt text; an **empty string** is valid and means "decorative".
+- **`caption` / `transcript_url`** (video) — provide a nonblank caption or an
+  HTTP(S) link to the transcript when publishing. The optional URL uses the
+  same length and character limits as an inline link. Existing caption-only
+  documents keep the same wire shape.
 - **`params`** (gameEmbed) — an allowlisted key/value list.
 - **`children`** (panel) — non-empty nested node list (contributes a nested reading order).
 - **`alignment`** (rotatedText) — `left` (default), `center`, or `right`.

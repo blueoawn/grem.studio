@@ -174,8 +174,11 @@ pub struct Video {
     pub asset_id: String,
     /// Optional poster image asset.
     pub poster_asset_id: Option<String>,
-    /// Optional caption / transcript reference.
+    /// Optional caption. Existing documents may use this for transcript text.
     pub caption: Option<String>,
+    /// Optional HTTP(S) link to a transcript.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub transcript_url: Option<String>,
     /// Optional display width in device-independent units.
     pub width: Option<u16>,
     /// Optional display height in device-independent units.
@@ -607,6 +610,9 @@ fn normalize_node(
                 normalize_identifier(IdKind::AssetId, poster, MAX_ASSET_ID_BYTES)?;
             }
             normalize_optional_text("caption", &mut v.caption)?;
+            if let Some(transcript_url) = &mut v.transcript_url {
+                validate_url(transcript_url)?;
+            }
             check_dimension("width", &mut v.width)?;
             check_dimension("height", &mut v.height)?;
         }
