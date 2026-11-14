@@ -74,8 +74,8 @@ tag values are camelCase: `paragraph`, `rotatedText`, `image`, `video`, `gameEmb
   URL in this issue (A1). The upload service that owns assets is out of scope.
 - **`embed_id`** (gameEmbed) — an approved registry id resolved to an origin/path policy
   elsewhere. Never a raw `iframe`/URL.
-- **`alt`** (rotatedText) — a motion-safe / accessible read used when rotation is
-  unsupported. Omitted when it merely duplicates the visible text.
+- **`alt`** (rotatedText) — an optional explanation appended to the visible text
+  in the fallback when it adds information.
 - **`alt`** (image) — alt text; an **empty string** is valid and means "decorative".
 - **`caption` / `transcript_url`** (video) — provide a nonblank caption or an
   HTTP(S) link to the transcript when publishing. The optional URL uses the
@@ -137,10 +137,12 @@ re-serialize deterministically):
    trimmed; ≤ `MAX_TEXT_FIELD_BYTES`; control characters rejected
    (`InvalidTextField` / `ControlCharacter`).
 9. **URLs** (inline links) — must start with `http://` or `https://`, ≤ `MAX_URL_BYTES`,
-   no control characters (`InvalidUrl`).
+   no control characters (`InvalidUrl`). A rejected `rotatedText` link target containing
+   an executable token is reported as `ExecutableContent`.
 10. **Identifiers** — `asset_id`, `embed_id`, embed param key follow the id charset/length
     rules (`InvalidIdentifier`).
-11. **Rotation** — within `[-180, 180]` (`OutOfRange`).
+11. **Rotation** — within `[-180, 180]` (`OutOfRange`). `rotatedText` rejects unknown
+    fields such as `transform` (`InvalidJson`).
 12. **Dimensions** — `1..=4096` (`OutOfRange`).
 13. **Embed params** — ≤ `MAX_EMBED_PARAMS`; each key is a valid identifier, value non-empty.
 
@@ -167,11 +169,10 @@ inert text.
 the struct definitions), so the same logical document always produces the same bytes.
 Round-trip is stable: `from_json(to_json(doc)) == doc`.
 
-- Omitted optional fields are absent in the output (serde does not serialize `None`), and
-  boolean marks that are `false` are still present (serde serializes default booleans as
-  written). A blank optional string that is required to exist (e.g. image `alt`) is
-  normalized to `""`; a blank *optional* field (caption, alt on rotated text, label) is
-  normalized to `None` and dropped.
+- Optional fields with no value serialize as `null`. Blank optional strings such as
+  a caption, rotated text alt, or panel label normalize to `null`. A blank required
+  image alt normalizes to `""`. Inline run boolean marks are always serialized, and
+  canonical `rotatedText` JSON includes the alignment even when it defaults to `left`.
 
 ---
 
@@ -279,6 +280,13 @@ A clock ticked.
 ---
 
 ## 8. Fallback behavior for unsupported clients
+
+Clients without rotation support, or with rotation disabled for accessibility, render
+the `rotatedText` line as unrotated plain text in document reading order. Use the same
+projection as `plain_text()`: the run text followed by ` (alt)` when the trimmed alt is
+non-empty and differs from the visible line (ignoring ASCII case). For example, run text
+`B` and alt `bee` yield `B (bee)`. Rotation and alignment do not change the fallback
+text or the line's place in the chapter.
 
 Clients that do not support `gameEmbed` nodes should render a placeholder using the
 `title` field as fallback text. The `title` field is required and must contain meaningful
