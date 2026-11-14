@@ -455,9 +455,13 @@ pub fn restore_serial_post(
 
     match &snapshot.content {
         RevisionContent::Published(published) => {
-            if let Some(document) = &published.document {
-                super::validate_publication(ctx, document)?;
-            }
+            let assets = if let Some(document) = &published.document {
+                let normalized = crate::minigames::validate_publication(ctx, document)?;
+                super::validate_media_references(ctx, &actor, &normalized)?
+            } else {
+                Default::default()
+            };
+            super::replace_media_references(ctx, &post.slug, assets);
             ctx.db
                 .serial_posts()
                 .slug()

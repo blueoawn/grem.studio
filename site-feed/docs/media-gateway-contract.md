@@ -289,8 +289,31 @@ Admins receive an empty result.
 only when the asset is ready and its ID uses the serial document's asset-ID
 format. The helper checks processing readiness. Before returning or serving
 that path, public readers must go through a gateway that checks for a
-published reference. Private previews and publication reference checks have
-their own authorization contracts.
+published reference.
+
+## Published chapter references
+
+Publishing, replacing, or restoring a rich chapter validates every image,
+video, and explicit video poster ID, including media nested inside panels.
+Assets must be ready and match the node's media type. A publisher can use
+assets owned by the calling identity. Admins can also use another publisher's
+ready assets. Videos need a caption or HTTP(S) transcript link. Images need
+an `alt` field, with an empty value reserved for decorative art.
+
+`published_media_references` contains one `(post_slug, asset_id)` pair per
+published chapter using an asset. Each asset's reference count is the number
+of its rows. The gateway can check that an asset has at least one row before
+serving it. The table holds only IDs present in public chapters. It carries
+no storage keys, rendition paths, publisher identities, or draft references.
+Publishing and restoring update the rows in the same reducer transaction as
+the chapter. Removing a chapter or restoring its legacy-only revision removes
+its rows. Other chapters' references are preserved.
+
+Adding the table preserves existing data. A chapter published before this
+index existed acquires its rows when an authorized publisher or admin saves
+it through the rich publication path. Audit and republish any such chapters
+that use media before requiring the index for public delivery. Regenerate
+bindings for clients that read the new table.
 
 ## Storage integration requirements
 
