@@ -399,9 +399,8 @@ fn store_publication(
         .map_or_else(|| post.created_by.clone(), |row| row.modified_by.clone());
     let already_published = existing.is_some();
     let previous = PublishedSnapshot::from_post(&post, existing);
-    let body = update_legacy_body.then(|| body_for_snapshot.clone());
     let next = PublishedSnapshot {
-        body: body_for_snapshot,
+        body: body_for_snapshot.clone(),
         document: Some(document.clone()),
         ..PublishedSnapshot::from_post(&post, None)
     };
@@ -420,11 +419,11 @@ fn store_publication(
     replace_media_references(ctx, &post.slug, assets);
 
     let slug = post.slug.clone();
-    if let Some(body) = body {
-        ctx.db
-            .serial_posts()
-            .slug()
-            .update(SerialPost { body, ..post });
+    if update_legacy_body {
+        ctx.db.serial_posts().slug().update(SerialPost {
+            body: body_for_snapshot,
+            ..post
+        });
     }
     let rich = PublishedRichDocument {
         slug,
